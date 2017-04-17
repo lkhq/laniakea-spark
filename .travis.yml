@@ -1,0 +1,14 @@
+# Travis CI config for Laniakea Spark
+language: c
+sudo: required
+dist: trusty
+
+services:
+  - docker
+
+before_script:
+  - docker build -t lkbuild -f tests/ci/Dockerfile .
+
+script:
+  - docker run -t -e DC=$DC -v `pwd`:/build lkbuild
+    ./tests/ci/build_and_test.sh
