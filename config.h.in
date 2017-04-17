@@ -1,0 +1,2 @@
+#mesondefine PACKAGE_NAME
+#mesondefine PACKAGE_VERSION
