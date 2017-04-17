@@ -16,7 +16,8 @@ spark_src = [
 #
 thread_dep = dependency('threads')
 glib_dep = dependency('glib-2.0')
-czmq_dep  = dependency('libczmq')
+czmq_dep = dependency('libczmq')
+json_dep = dependency('json-glib-1.0')
 math_lib = compiler.find_library('m')
 
 #
