@@ -20,6 +20,8 @@
 #include <config.h>
 #include <glib.h>
 
+#include "spark-engine.h"
+
 /**
  * main:
  */
@@ -28,6 +30,7 @@ main (int argc, char *argv[])
 {
     GError *error = NULL;
     GOptionContext *opt_context;
+    g_autoptr(SparkEngine) engine = NULL;
 
     static gboolean opt_show_version = FALSE;
     static gboolean opt_verbose_mode = FALSE;
@@ -57,6 +60,13 @@ main (int argc, char *argv[])
     if (opt_show_version) {
         g_print ("%s %s\n", PACKAGE_NAME, PACKAGE_VERSION);
         return 0;
+    }
+
+    engine = spark_engine_new ();
+
+    if (!spark_engine_run (engine, &error)) {
+	    g_printerr ("Failure: %s\n", error->message);
+	    return 2;
     }
 
     return 0;

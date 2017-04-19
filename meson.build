@@ -8,7 +8,9 @@ compiler = meson.get_compiler('c')
 # Sources
 #
 spark_src = [
-    'src/main.c'
+    'src/main.c',
+    'src/spark-engine.h',
+    'src/spark-engine.c'
 ]
 
 #
@@ -16,6 +18,7 @@ spark_src = [
 #
 thread_dep = dependency('threads')
 glib_dep = dependency('glib-2.0')
+gobject_dep = dependency('gobject-2.0')
 czmq_dep = dependency('libczmq')
 json_dep = dependency('json-glib-1.0')
 math_lib = compiler.find_library('m')
@@ -48,7 +51,9 @@ executable('lk-spark',
            [spark_src],
            dependencies: [thread_dep,
                           glib_dep,
+                          gobject_dep,
                           czmq_dep,
+                          json_dep,
                           math_lib],
 	   install: true
 )
