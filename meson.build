@@ -10,7 +10,9 @@ compiler = meson.get_compiler('c')
 spark_src = [
     'src/main.c',
     'src/spark-engine.h',
-    'src/spark-engine.c'
+    'src/spark-engine.c',
+    'src/spark-worker.h',
+    'src/spark-worker.c'
 ]
 
 #

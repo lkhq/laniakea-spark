@@ -28,6 +28,9 @@
 #include "spark-engine.h"
 
 #include <json-glib/json-glib.h>
+#include <czmq.h>
+
+#include "spark-worker.h"
 
 typedef struct _SparkEnginePrivate	SparkEnginePrivate;
 struct _SparkEnginePrivate
@@ -38,7 +41,9 @@ struct _SparkEnginePrivate
 	gchar *lighthouse_server; /* endpoint to connect to to receive jobs */
 	guint max_jobs;          /* maximum number of tasks we can take */
 
-	GHashTable *tasks;
+	GPtrArray *workers;
+	zsock_t *wsock;
+	zsock_t *lhsock;
 
 	GMainLoop *main_loop;
 };
@@ -58,12 +63,16 @@ spark_engine_finalize (GObject *object)
 	SparkEngine *engine = SPARK_ENGINE (object);
 	SparkEnginePrivate *priv = GET_PRIVATE (engine);
 
-	g_hash_table_unref (priv->tasks);
 	g_main_loop_unref (priv->main_loop);
 
 	g_free (priv->machine_id);
 	g_free (priv->machine_name);
 	g_free (priv->lighthouse_server);
+	g_ptr_array_unref (priv->workers);
+
+	if (priv->lhsock != NULL)
+		zsock_destroy (&priv->lhsock);
+	zsock_destroy (&priv->wsock);
 
 	G_OBJECT_CLASS (spark_engine_parent_class)->finalize (object);
 }
@@ -76,12 +85,13 @@ spark_engine_init (SparkEngine *engine)
 {
 	SparkEnginePrivate *priv = GET_PRIVATE (engine);
 
+	priv->workers = g_ptr_array_new_with_free_func (g_object_unref);
 	priv->main_loop = g_main_loop_new (NULL, FALSE);
-	priv->tasks = g_hash_table_new_full (g_str_hash,
-					     g_str_equal,
-					     g_free,
-					     g_object_unref);
 	priv->max_jobs = 1;
+
+	/* create internal socket for the worker processes to connect to */
+	priv->wsock = zsock_new_pull ("inproc://workers");
+	g_assert (priv->wsock);
 }
 
 /**
@@ -92,6 +102,20 @@ spark_engine_class_init (SparkEngineClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	object_class->finalize = spark_engine_finalize;
+}
+
+/**
+ * spark_engine_route_messages:
+ */
+gboolean
+spark_engine_route_messages (gpointer user_data)
+{
+	SparkEngine *engine = SPARK_ENGINE (user_data);
+	SparkEnginePrivate *priv = GET_PRIVATE (engine);
+
+	zstr_send (priv->lhsock, "TEST");
+
+	return TRUE;
 }
 
 /**
@@ -161,11 +185,44 @@ gboolean
 spark_engine_run (SparkEngine *engine, GError **error)
 {
 	SparkEnginePrivate *priv = GET_PRIVATE (engine);
+	g_autoptr(GMainLoop) loop = NULL;
+	guint i;
 
 	if (!spark_engine_load_config (engine, error))
 		return FALSE;
 
+	if (priv->lhsock != NULL)
+		zsock_destroy (&priv->lhsock);
+	priv->lhsock = zsock_new_dealer (priv->lighthouse_server);
+	if (priv->lhsock == NULL) {
+		g_set_error (error, SPARK_ENGINE_ERROR,
+			     SPARK_ENGINE_ERROR_FAILED,
+			     "Unable to connect: %s",
+			     g_strerror (errno));
+		return FALSE;
+	}
+
+	/* new main loop for the master thread */
+	loop = g_main_loop_new (NULL, FALSE);
+
+	for (i = 0; i < priv->max_jobs; i++) {
+		SparkWorker *worker;
+
+		worker = spark_worker_new ();
+		g_ptr_array_add (priv->workers, worker);
+	}
+
 	g_print ("Running on %s (%s), job capacity: %i\n", priv->machine_name, priv->machine_id, priv->max_jobs);
+
+	g_idle_add (spark_engine_route_messages, engine);
+	g_main_loop_run (loop);
+
+	/* wait for workers to finish and clean up */
+	for (i = 0; i < priv->workers->len; i++) {
+		SparkWorker *worker = SPARK_WORKER (g_ptr_array_index (priv->workers, i));
+
+		while (spark_worker_is_running (worker)) { sleep (1000); }
+	}
 
 	return TRUE;
 }
