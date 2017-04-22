@@ -105,15 +105,121 @@ spark_engine_class_init (SparkEngineClass *klass)
 }
 
 /**
+ * spark_engine_compose_job_request:
+ *
+ * Compose a job request.
+ */
+static gchar*
+spark_engine_compose_job_request (SparkEngine *engine)
+{
+	SparkEnginePrivate *priv = GET_PRIVATE (engine);
+	g_autoptr(JsonBuilder) builder = NULL;
+	g_autoptr(JsonGenerator) gen = NULL;
+	g_autoptr(JsonNode) root = NULL;
+
+	builder = json_builder_new ();
+
+	json_builder_begin_object (builder);
+
+	/* set that we request a job */
+	json_builder_set_member_name (builder, "request");
+	json_builder_add_string_value (builder, "job");
+
+	/* set requester details */
+	json_builder_set_member_name (builder, "machine_name");
+	json_builder_add_string_value (builder, priv->machine_name);
+
+	json_builder_set_member_name (builder, "machine_id");
+	json_builder_add_string_value (builder, priv->machine_id);
+
+	/* we currently accept all jobs */
+	json_builder_set_member_name (builder, "accepts");
+	json_builder_begin_array (builder);
+	json_builder_add_string_value (builder, "*");
+	json_builder_end_array (builder);
+
+	json_builder_end_object (builder);
+
+	/* write JSON string */
+	gen = json_generator_new ();
+	root = json_builder_get_root (builder);
+	json_generator_set_root (gen, root);
+
+	return json_generator_to_data (gen, NULL);
+}
+
+/**
+ * spark_engine_request_jobs:
+ *
+ * Ask the master for new jobs in case we have capacity for them,
+ * and enqueue the new jobs for running.
+ */
+static void
+spark_engine_request_jobs (SparkEngine *engine)
+{
+	SparkEnginePrivate *priv = GET_PRIVATE (engine);
+	guint i;
+
+	for (i = 0; i < priv->workers->len; i++) {
+		SparkWorker *worker = SPARK_WORKER (g_ptr_array_index (priv->workers, i));
+
+		/* test if we have capacity */
+		if (!spark_worker_is_running (worker)) {
+			g_autofree gchar *request_msg = NULL;
+			g_autofree gchar *reply_msg = NULL;
+			zmsg_t *msg;
+			zpoller_t *poller = zpoller_new (priv->lhsock, NULL);
+
+			request_msg = spark_engine_compose_job_request (engine);
+
+			/* emit request */
+			zstr_send (priv->lhsock, request_msg);
+
+			/* wait for reply for 8sec */
+			zpoller_wait (poller, 8 * 1000);
+			if (zpoller_expired (poller)) {
+				g_printerr ("Job request expired (the master server might be unreachable).\n");
+
+				/* since the server is possibly unreachable, we sleep some time */
+				usleep (20 * 1000 * 1000);
+				zpoller_destroy (&poller);
+				continue;
+			} else if (zpoller_terminated (poller)) {
+				g_printerr ("Job request was terminated.\n");
+				zpoller_destroy (&poller);
+				continue;
+			}
+			zpoller_destroy (&poller);
+
+			/* unpack and parse the reply message */
+			msg = zmsg_recv (priv->lhsock);
+			if (msg == NULL) {
+				g_printerr ("Received NULL reply.\n");
+				continue;
+			}
+			reply_msg = zmsg_popstr (msg);
+			if (reply_msg == NULL) {
+				g_printerr ("Reply message was empty.");
+				continue;
+			}
+			zmsg_destroy (&msg);
+
+			spark_worker_set_job_from_json (worker, reply_msg);
+			spark_worker_run (worker);
+		}
+	}
+}
+
+/**
  * spark_engine_route_messages:
  */
-gboolean
+static gboolean
 spark_engine_route_messages (gpointer user_data)
 {
 	SparkEngine *engine = SPARK_ENGINE (user_data);
-	SparkEnginePrivate *priv = GET_PRIVATE (engine);
 
-	zstr_send (priv->lhsock, "TEST");
+	/* request fresh jobs if we have capacity */
+	spark_engine_request_jobs (engine);
 
 	return TRUE;
 }
@@ -201,6 +307,9 @@ spark_engine_run (SparkEngine *engine, GError **error)
 			     g_strerror (errno));
 		return FALSE;
 	}
+
+	/* makes tracing easier */
+	zsock_set_identity (priv->lhsock, priv->machine_name);
 
 	/* new main loop for the master thread */
 	loop = g_main_loop_new (NULL, FALSE);

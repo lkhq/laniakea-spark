@@ -43,6 +43,8 @@ struct _SparkWorkerClass
 SparkWorker		*spark_worker_new (void);
 
 void			spark_worker_run (SparkWorker *worker);
+void 			spark_worker_set_job_from_json (SparkWorker *worker,
+							const gchar *reply_msg);
 
 gboolean		spark_worker_is_running (SparkWorker *worker);
 

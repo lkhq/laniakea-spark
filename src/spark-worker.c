@@ -36,6 +36,7 @@ struct _SparkWorkerPrivate
 	gchar *machine_name; /* name of this machine */
 
 	GMainLoop *loop;
+	gboolean running;
 };
 
 G_DEFINE_TYPE_WITH_PRIVATE (SparkWorker, spark_worker, G_TYPE_OBJECT)
@@ -92,9 +93,23 @@ spark_worker_run_thread (gpointer user_data)
 
 	/* run the main event loop */
 	g_main_loop_run (priv->loop);
+
+	priv->running = FALSE;
 	return NULL;
 }
 
+/**
+ * spark_worker_set_job_from_json:
+ *
+ * Set a new job from the JSON data we received.
+ */
+void
+spark_worker_set_job_from_json (SparkWorker *worker, const gchar *reply_msg)
+{
+	g_assert (!spark_worker_is_running (worker));
+
+	g_print ("RECV: %s\n", reply_msg);
+}
 
 /**
  * spark_worker_run:
@@ -104,11 +119,13 @@ spark_worker_run_thread (gpointer user_data)
 void
 spark_worker_run (SparkWorker *worker)
 {
+	SparkWorkerPrivate *priv = GET_PRIVATE (worker);
 	g_assert (!spark_worker_is_running (worker));
 
 	g_thread_new (NULL,
 		      spark_worker_run_thread,
 		      worker);
+	priv->running = TRUE;
 }
 
 /**
@@ -120,7 +137,7 @@ gboolean
 spark_worker_is_running (SparkWorker *worker)
 {
 	SparkWorkerPrivate *priv = GET_PRIVATE (worker);
-	return g_main_loop_is_running (priv->loop);
+	return priv->running;
 }
 
 /**
