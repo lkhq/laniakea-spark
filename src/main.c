@@ -19,6 +19,7 @@
 
 #include <config.h>
 #include <glib.h>
+#include <czmq.h>
 
 #include "spark-engine.h"
 
@@ -61,6 +62,10 @@ main (int argc, char *argv[])
         g_print ("%s %s\n", PACKAGE_NAME, PACKAGE_VERSION);
         return 0;
     }
+
+    /* don't set default CZMQ signal handler, so CTRL+C works. */
+    /* FIXME: We might want our own handler here. */
+    zsys_handler_set (NULL);
 
     engine = spark_engine_new ();
 

@@ -39,7 +39,10 @@ struct _SparkEnginePrivate
 	gchar *machine_name; /* name of this machine */
 
 	gchar *lighthouse_server; /* endpoint to connect to to receive jobs */
-	guint max_jobs;          /* maximum number of tasks we can take */
+	guint max_jobs;           /* maximum number of tasks we can take */
+
+	gchar *client_cert_fname; /* filename of the private certificate used by this Spark instance */
+	gchar *server_cert_fname; /* filename of the public certificate of the server we connect to */
 
 	GPtrArray *workers;
 	zsock_t *wsock;
@@ -53,6 +56,7 @@ G_DEFINE_TYPE_WITH_PRIVATE (SparkEngine, spark_engine, G_TYPE_OBJECT)
 
 /* path to the global JSON configuration */
 static const gchar *config_fname = "/etc/laniakea/spark.json";
+static const gchar *certs_base_dir = "/etc/laniakea/keys/curve/";
 
 /**
  * spark_engine_finalize:
@@ -233,6 +237,8 @@ spark_engine_load_config (SparkEngine *engine, GError **error)
 	SparkEnginePrivate *priv = GET_PRIVATE (engine);
 	g_autoptr(JsonParser) parser = NULL;
 	JsonObject *root;
+	g_autofree gchar *client_cert_basename = NULL;
+	g_autofree gchar *server_cert_basename = NULL;
 
 	/* fetch the machine ID first */
 	if (!g_file_get_contents ("/etc/machine-id", &priv->machine_id, NULL, error))
@@ -281,6 +287,13 @@ spark_engine_load_config (SparkEngine *engine, GError **error)
 		}
 	}
 
+	/* determine certificate filenames */
+	client_cert_basename = g_strdup_printf ("%s_private.sec", priv->machine_name);
+	priv->client_cert_fname = g_build_filename (certs_base_dir, client_cert_basename, NULL);
+
+	server_cert_basename = g_strdup_printf ("%s_lighthouse-server.pub", priv->machine_name);
+	priv->server_cert_fname = g_build_filename (certs_base_dir, server_cert_basename, NULL);
+
 	return TRUE;
 }
 
@@ -293,13 +306,15 @@ spark_engine_run (SparkEngine *engine, GError **error)
 	SparkEnginePrivate *priv = GET_PRIVATE (engine);
 	g_autoptr(GMainLoop) loop = NULL;
 	guint i;
+	zcert_t *client_cert;
+	zcert_t *server_cert;
 
 	if (!spark_engine_load_config (engine, error))
 		return FALSE;
 
 	if (priv->lhsock != NULL)
 		zsock_destroy (&priv->lhsock);
-	priv->lhsock = zsock_new_dealer (priv->lighthouse_server);
+	priv->lhsock = zsock_new (ZMQ_DEALER);
 	if (priv->lhsock == NULL) {
 		g_set_error (error, SPARK_ENGINE_ERROR,
 			     SPARK_ENGINE_ERROR_FAILED,
@@ -308,8 +323,47 @@ spark_engine_run (SparkEngine *engine, GError **error)
 		return FALSE;
 	}
 
+	client_cert = zcert_load (priv->client_cert_fname);
+	if (client_cert == NULL) {
+		g_set_error (error, SPARK_ENGINE_ERROR,
+			     SPARK_ENGINE_ERROR_FAILED,
+			     "Unable to load client certificate '%s': %s",
+			     priv->client_cert_fname,
+			     g_strerror (errno));
+		return FALSE;
+	}
+
+	server_cert = zcert_load (priv->server_cert_fname);
+	if (server_cert == NULL) {
+		g_set_error (error, SPARK_ENGINE_ERROR,
+			     SPARK_ENGINE_ERROR_FAILED,
+			     "Unable to load server public certificate '%s': %s",
+			     priv->server_cert_fname,
+			     g_strerror (errno));
+		return FALSE;
+	}
+
 	/* makes tracing easier */
 	zsock_set_identity (priv->lhsock, priv->machine_name);
+
+	/* use our secret client certificate */
+	zcert_apply (client_cert, priv->lhsock);
+	zcert_destroy (&client_cert);
+
+	/* we need to know who we are connecting to - set the public server certificate */
+	zsock_set_curve_serverkey (priv->lhsock,
+				   zcert_public_txt (server_cert));
+	zcert_destroy (&server_cert);
+
+	/* connect to Lighthouse */
+	if (zsock_connect (priv->lhsock, priv->lighthouse_server) == -1) {
+		g_set_error (error, SPARK_ENGINE_ERROR,
+			     SPARK_ENGINE_ERROR_FAILED,
+			     "Unable to connect to '%s': %s",
+			     priv->lighthouse_server,
+			     g_strerror (errno));
+		return FALSE;
+	}
 
 	/* new main loop for the master thread */
 	loop = g_main_loop_new (NULL, FALSE);
