@@ -289,7 +289,7 @@ spark_engine_load_config (SparkEngine *engine, GError **error)
 
 	/* determine certificate filenames */
 	client_cert_basename = g_strdup_printf ("%s_private.sec", priv->machine_name);
-	priv->client_cert_fname = g_build_filename (certs_base_dir, client_cert_basename, NULL);
+	priv->client_cert_fname = g_build_filename (certs_base_dir, "secret", client_cert_basename, NULL);
 
 	server_cert_basename = g_strdup_printf ("%s_lighthouse-server.pub", priv->machine_name);
 	priv->server_cert_fname = g_build_filename (certs_base_dir, server_cert_basename, NULL);
