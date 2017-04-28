@@ -28,6 +28,9 @@ math_lib = compiler.find_library('m')
 #
 # Configuration
 #
+
+spark_runners_install_dir = 'lib/laniakea/spark/runners/'
+
 conf = configuration_data()
 conf.set_quoted('PACKAGE_NAME', 'Laniakea Spark')
 conf.set_quoted('PACKAGE_VERSION', spark_version)
@@ -59,3 +62,5 @@ executable('lk-spark',
                           math_lib],
 	   install: true
 )
+
+subdir('src/runners')
