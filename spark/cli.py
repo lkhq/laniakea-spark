@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
+
 def daemon():
     from argparse import ArgumentParser
     parser = ArgumentParser(description="Debile build slave")

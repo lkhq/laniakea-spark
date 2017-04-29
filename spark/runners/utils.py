@@ -14,13 +14,3 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
-
-from schroot import schroot
-
-import os
-
-'''
-Run a command, sending it's output to the
-remote server.
-'''
-def chroot_run_send(chroot, jstatus, )

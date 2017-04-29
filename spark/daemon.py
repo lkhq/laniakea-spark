@@ -15,8 +15,6 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
-import sys
 import logging as log
 from multiprocessing import Process
 import zmq
@@ -24,6 +22,7 @@ import zmq
 from spark.config import LocalConfig
 from spark.connection import ServerConnection
 from spark.worker import Worker
+
 
 class Daemon:
 

@@ -14,4 +14,4 @@ install:
 script:
   - ./setup.py build
   - ./setup.py install
-  - flake8 --ignore E501,E303,E261,F403 spark/
+  - flake8 --ignore E501,E303,E261,F403,E302,E221 spark/

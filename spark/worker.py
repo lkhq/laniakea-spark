@@ -16,12 +16,8 @@
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import sys
-import asyncio
 import logging as log
-import json
 import time
-import zmq
 
 from spark.connection import *
 from spark.joblog import JobLog

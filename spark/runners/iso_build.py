@@ -17,7 +17,6 @@
 
 from schroot import schroot
 
-import os
 
 class IsoBuilder:
 
@@ -40,7 +39,6 @@ class IsoBuilder:
 
     def run(self):
         with schroot(self._chroot_name) as chroot:
-            chroot.copy(target, "/tmp")
 
             out, err, ret = chroot.run([
                 'apt-get', 'install', '-y', 'hello'

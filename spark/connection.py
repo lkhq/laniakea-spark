@@ -16,13 +16,10 @@
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import sys
 import json
 import zmq
 import zmq.auth
 import logging as log
-
-from spark.config import LocalConfig
 
 
 class JobStatus:
@@ -45,13 +42,12 @@ class ServerErrorException(Exception):
 class ServerConnection:
 
     def __init__(self, conf, ctx):
-        if zmq.zmq_version_info() < (4,0):
+        if zmq.zmq_version_info() < (4, 0):
             raise RuntimeError("Security is not supported in libzmq version < 4.0. libzmq version {0}".format(zmq.zmq_version()))
         self._conf = conf
         self._zctx = ctx
 
         self._send_attempts = 0
-
 
     '''
     Set up an encrypted connection to the Lighthouse server

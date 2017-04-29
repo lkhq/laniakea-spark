@@ -16,9 +16,6 @@
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import sys
-import logging as log
-import zmq
 import json
 from io import StringIO
 
