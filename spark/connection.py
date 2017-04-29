@@ -49,11 +49,12 @@ class ServerConnection:
 
         self._send_attempts = 0
 
-    '''
-    Set up an encrypted connection to the Lighthouse server
-    andf run it.
-    '''
+
     def connect(self):
+        """
+        Set up an encrypted connection to the Lighthouse server
+        andf run it.
+        """
 
         # construct base data to include in all requests to the server
         self._base_req = {}
@@ -77,11 +78,11 @@ class ServerConnection:
         self._sock.connect(self._conf.lighthouse_server)
 
 
-    '''
-    Re-establish connection. The lazy answer in case we got
-    no reply from the server for a while.
-    '''
     def reconnect(self):
+        """
+        Re-establish connection. The lazy answer in case we got
+        no reply from the server for a while.
+        """
         self._sock.close()
         self.connect()
 
@@ -99,17 +100,18 @@ class ServerConnection:
             self.__send_attempt_failed()
 
 
-    '''
-    Get a copy of the base request template.
-    '''
     def new_base_request(self):
+        """
+        Get a copy of the base request template.
+        """
         return dict(self._base_req)
 
 
-    '''
-    Request a new job from the server.
-    '''
     def request_job(self):
+        """
+        Request a new job from the server.
+        """
+
         poller = zmq.Poller()
         poller.register(self._sock, zmq.POLLIN)
 
@@ -118,7 +120,7 @@ class ServerConnection:
         req = dict(self._base_req)
         req['request'] = 'job'
         req['accepts'] = ['*']
-        req['architectures'] = ['*']
+        req['architectures'] = self._conf.supported_architectures
 
         # request job
         self._sock.send_string(str(json.dumps(req)))

@@ -50,10 +50,10 @@ class Worker:
             self._conn.send_job_request_status(job_id, JobStatus.REJECTED)
 
 
-    '''
-    Request a new job.
-    '''
     def _request_job(self):
+        """
+        Request a new job.
+        """
 
         job_reply = None
         try:

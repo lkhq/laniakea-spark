@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
+import sys
 import logging as log
 from multiprocessing import Process
 import zmq
@@ -32,11 +33,12 @@ class Daemon:
         log.basicConfig(level=log_level, format="[%(levelname)s] %(message)s")
 
 
-    '''
-    Set up connection for a new worker process and launch it.
-    This function is executed in a new process.
-    '''
     def run_worker_process(self, worker_name):
+        """
+        Set up connection for a new worker process and launch it.
+        This function is executed in a new process.
+        """
+
         zctx = zmq.Context()
 
         # initialize Lighthouse connection
@@ -51,6 +53,13 @@ class Daemon:
 
 
     def run(self):
+        # check Python platform version - 3.5 works while 3.6 or higher is properly tested
+        pyversion = sys.version_info
+        if pyversion < (3, 5):
+            raise Exception('Laniakea-Spark needs Python >= 3.5 to work. Please upgrade your Python version.')
+        if pyversion >= (3, 5) and pyversion < (3, 6):
+            log.info('Running on Python 3.5 while Python 3.6 is recommended.')
+
         self._conf = LocalConfig()
         self._conf.load()
 

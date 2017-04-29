@@ -17,13 +17,16 @@
 
 import json
 import os
+import platform
+from typing import List
 from pathlib import Path
 
 
-'''
-Local configuration for the spark daemon.
-'''
 class LocalConfig:
+    """
+    Local configuration for the spark daemon.
+    """
+
     CERTS_BASE_DIR = '/etc/laniakea/keys/curve/'
 
     def load(self, fname=None):
@@ -34,10 +37,13 @@ class LocalConfig:
         with open(fname) as json_file:
             jdata = json.load(json_file)
 
-        machine_id_secret = Path('/etc/machine-id').read_text().strip('\n').strip()
         self._machine_name = jdata.get('MachineName')
         if not self._machine_name:
             self._machine_name = Path('/etc/hostname').read_text().strip('\n').strip()
+
+        # create machine ID from its name and the unique identifier it has
+        machine_id_secret = Path('/etc/machine-id').read_text().strip('\n').strip()
+        self._make_machine_id(machine_id_secret)
 
         self._lighthouse_server = jdata['LighthouseServer']
 
@@ -50,7 +56,19 @@ class LocalConfig:
 
         self._workspace = str(jdata['Workspace'])
 
-        self._make_machine_id(machine_id_secret)
+        self._architectures = jdata.get("Architectures")
+        if not self._architectures:
+            import re
+            # try to rescue doing some poor mapping to the Debian arch vendor strings
+            # for a couple of common architectures
+            machine_str = platform.machine()
+            if machine_str == 'x86_64':
+                self._architectures = ['amd64']
+            elif re.match('i?86', machine_str):
+                self._architectures = ['i386']
+            else:
+                self._architectures = [machine_str]
+                log.warning('Using auto-detected architecture name: {}'.format(machine_str))
 
 
     def _make_machine_id(self, secret_id):
@@ -97,3 +115,7 @@ class LocalConfig:
     @property
     def workspace(self) -> str:
         return self._workspace
+
+    @property
+    def supported_architectures(self) -> List[str]:
+        return self._architectures

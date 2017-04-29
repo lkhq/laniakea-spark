@@ -20,11 +20,11 @@ import json
 from io import StringIO
 
 
-'''
-Send status information (usually in form of stdout/stderr output)
-for a specific job to the server as well as to the local config file.
-'''
 class JobLog:
+    """
+    Send status information (usually in form of stdout/stderr output)
+    for a specific job to the server as well as to the local config file.
+    """
 
     def __init__(self, lhconn, job_id):
         self._conn = lhconn
