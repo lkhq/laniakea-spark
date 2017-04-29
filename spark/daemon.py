@@ -1,4 +1,4 @@
-# Copyright (C) 2016 Matthias Klumpp <matthias@tenstral.net>
+# Copyright (C) 2016-2017 Matthias Klumpp <matthias@tenstral.net>
 #
 # Licensed under the GNU Lesser General Public License Version 3
 #
@@ -17,14 +17,10 @@
 
 import os
 import sys
-import asyncio
 import logging as log
-import json
-
+from multiprocessing import Process
 import zmq
 import zmq.auth
-from zmq.auth.asyncio import AsyncioAuthenticator
-from zmq.asyncio import Context, ZMQEventLoop, Poller
 
 from spark.config import LocalConfig
 from spark.worker import Worker
@@ -37,44 +33,32 @@ class Daemon:
         log.basicConfig(level=log_level, format="[%(levelname)s] %(message)s")
 
 
-    def _construct_job_request_message(self):
-        req = {}
-
-        req['request'] = 'job'
-        req['machine_name'] = self._conf.machine_name
-        req['machine_id'] = self._conf.machine_id
-        req['accepts'] = ['*']
-        req['architectures'] = ['*']
-
-        return str(json.dumps(req))
-
-
     '''
-    Request a new job if we have free workers.
+    Set up connection for a new worker process and launch it.
+    This function is executed in a new process.
     '''
-    async def _request_jobs(self):
-        for worker in self._workers:
-            if worker.running:
-                continue
+    def run_worker_process(self, worker_name):
+        zctx = zmq.Context()
 
-            poller = Poller()
-            poller.register(self._lhsock, zmq.POLLIN)
-            self._lhsock.send_string(self._construct_job_request_message())
+        # initialize Lighthouse socket
+        lhsock = zctx.socket(zmq.DEALER)
 
-            # wait 5sec for a reply
-            if (poller.poll(5000)):
-                msg = self._lhsock.recv()
-                log.info(str(msg, 'utf-8'))
-            else:
-                log.error('Job request expired (the master server might be unreachable).')
+        # set server certificate
+        server_public, _ = zmq.auth.load_certificate(self._conf.server_cert_fname)
+        lhsock.curve_serverkey = server_public
 
-            worker.start("test")
+        # set client certificate
+        client_secret_file = os.path.join(self._conf.client_cert_fname)
+        client_public, client_secret = zmq.auth.load_certificate(client_secret_file)
+        lhsock.curve_secretkey = client_secret
+        lhsock.curve_publickey = client_public
 
+        # connect
+        lhsock.connect(self._conf.lighthouse_server)
+        log.info('Running {0} on {1} ({2})'.format(worker_name, self._conf.machine_name, self._conf.machine_id))
 
-    async def _request_jobs_periodic(self):
-        while True:
-            await self._request_jobs()
-            await asyncio.sleep(20) # wait 20s before checking for new jobs again
+        w = Worker(self._conf, lhsock)
+        w.run()
 
 
     def run(self):
@@ -84,46 +68,13 @@ class Daemon:
         self._conf = LocalConfig()
         self._conf.load()
 
-        # FIXME: We use a sync context here, as otherwise any polling
-        # runs us into a "ValueError: Invalid file object: <zmq.asyncio.Socket object at 0x7f434f67f9a8>" error.
-        self._zctx = zmq.Context()
+        log.info('Maximum number of parallel jobs: {0}'.format(self._conf.max_jobs))
 
-        # initialize Lighthouse proxy
-        self._lhsock = self._zctx.socket(zmq.DEALER)
-
-        # set server certificate
-        server_public, _ = zmq.auth.load_certificate(self._conf.server_cert_fname)
-        self._lhsock.curve_serverkey = server_public
-
-        # set client certificate
-        client_secret_file = os.path.join(self._conf.client_cert_fname)
-        client_public, client_secret = zmq.auth.load_certificate(client_secret_file)
-        self._lhsock.curve_secretkey = client_secret
-        self._lhsock.curve_publickey = client_public
-
-        # connect
-        self._lhsock.connect(self._conf.lighthouse_server)
-        log.info('Running on {0} ({1}), job capacity: {2}'.format(self._conf.machine_name, self._conf.machine_id, self._conf.max_jobs))
-
-        # initialize the right amount of workers
-        # workers will use almost no resources when idle
+        # initialize workers
         self._workers = []
         for i in range(0, self._conf.max_jobs):
-            self._workers.append(Worker())
-
-        # proxy the encrypted connection so worker threads can
-        # use it easily.
-        print("A")
-
-        backendsock = self._zctx.socket(zmq.DEALER)
-        backendsock.bind('inproc://backend')
-        zmq.proxy(self._lhsock, backendsock)
-        print("B")
-
-        # run the event loop
-        loop = ZMQEventLoop()
-        asyncio.set_event_loop(loop)
-        asyncio.Task(self._request_jobs_periodic())
-        loop.run_forever()
-        loop.close()
-        self._lhsock.close()
+            worker_name = 'worker_{}'.format(i)
+            p = Process(target=self.run_worker_process, args=(worker_name,))
+            p.name = worker_name
+            p.start()
+            self._workers.append(p)

@@ -19,38 +19,111 @@ import os
 import sys
 import asyncio
 import logging as log
-import threading
-
+import json
+import time
 import zmq
+
+from spark.statusproxy import StatusProxy
+
+
+class JobStatus:
+    ACCEPTED = 'accepted'
+    REJECTED = 'rejected'
 
 
 class Worker:
 
-    def __init__(self):
-        self._running = False
+    def __init__(self, conf, lighthouse_socket):
+        self._lhsock = lighthouse_socket
+        self._conf = conf
 
 
-    def _run(self):
-        print ("HELLO!")
+    def _base_request_data(self):
+        req = {}
+        req['machine_name'] = self._conf.machine_name
+        req['machine_id'] = self._conf.machine_id
 
-        backendsock = self._zctx.socket(zmq.DEALER)
-        backendsock.connect('inproc://backend')
-        backendsock.send_string("BLAH")
-
-        loop = asyncio.get_event_loop()
-        loop.run_forever()
-        self._running = False
+        return req
 
 
-    @property
-    def is_running(self):
-        return self._running
+    def _construct_job_request_message(self):
+        req = self._base_request_data()
+
+        req['request'] = 'job'
+        req['accepts'] = ['*']
+        req['architectures'] = ['*']
+
+        return str(json.dumps(req))
 
 
-    def start(self, job_name):
-        assert(not self.running)
+    def _send_job_status(self, job_id, status):
+        req = self._base_request_data()
 
-        t = threading.Thread(target=self._run)
-        t.daemon = True  # thread dies when main thread (only non-daemon thread) exits.
-        t.name = job_name
-        t.start()
+        req['request'] = 'job-{}'.format(status)
+        req['_id'] = job_id
+
+        self._lhsock.send_string(str(json.dumps(req)))
+
+
+    def _run_job(self, runner, job):
+        job_id = job.get('_id')
+        workspace = os.path.join(self._conf.workspace, job_id)
+
+        if not runner.set_job(job, workspace):
+            self._send_job_status(job_id, JobStatus.REJECTED)
+            return
+        self._send_job_status(job_id, JobStatus.ACCEPTED)
+
+        log.info('Running job \'{}\''.format(job_id))
+        runner.run()
+
+
+    '''
+    Request a new job.
+    '''
+    def _request_job(self):
+        poller = zmq.Poller()
+        poller.register(self._lhsock, zmq.POLLIN)
+        self._lhsock.send_string(self._construct_job_request_message())
+
+        # wait 5sec for a reply
+        job_reply_raw = None
+        if (poller.poll(5000)):
+            job_reply_raw = self._lhsock.recv()
+        else:
+            log.error('Job request expired (the master server might be unreachable).')
+            return
+
+        job_reply = None
+        try:
+            job_reply = json.loads(str(job_reply_raw, 'utf-8'))
+        except Exception as e:
+            log.error('Unable to decode server reply: {}'.format(str(e)))
+            return
+        if not job_reply:
+            log.debug('No new jobs.')
+            return
+
+        server_error = job_reply.get('error')
+        if server_error:
+            log.warning('Received error message from server: {}'.format(server_error))
+            return
+
+        job_module = job_reply.get('module')
+        job_kind   = job_reply.get('kind')
+        job_id     = job_reply.get('_id')
+
+        proxy = StatusProxy(self._lhsock, self._conf.machine_name, self._conf._machine_id, job_id)
+        if job_module == 'isotope' and job_kind == 'image-build':
+            from spark.runners.iso_build import IsoBuilder
+            return self._run_job(IsoBuilder(proxy), job_reply)
+        else:
+            log.warning('Received job of type {0}::{1} which we can not handle.'.format(job_module, job_kind))
+            self._send_job_status(job_id, JobStatus.REJECTED)
+        log.info(job_reply)
+
+
+    def run(self):
+        while True:
+            self._request_job()
+            time.sleep(20) # wait 20s before trying again

@@ -1,4 +1,4 @@
-# Copyright (C) 2016 Matthias Klumpp <matthias@tenstral.net>
+# Copyright (C) 2017 Matthias Klumpp <matthias@tenstral.net>
 #
 # Licensed under the GNU Lesser General Public License Version 3
 #
@@ -47,6 +47,8 @@ class LocalConfig:
         self._client_cert_fname = os.path.join(self.CERTS_BASE_DIR, 'secret', '{0}_private.sec'.format(self.machine_name))
         self._server_cert_fname = os.path.join(self.CERTS_BASE_DIR, '{0}_lighthouse-server.pub'.format(self.machine_name))
 
+        self._workspace = str(jdata['Workspace'])
+
     @property
     def machine_id(self) -> str:
         return self._machine_id
@@ -70,3 +72,7 @@ class LocalConfig:
     @property
     def server_cert_fname(self) -> str:
         return self._server_cert_fname
+
+    @property
+    def workspace(self) -> str:
+        return self._workspace
