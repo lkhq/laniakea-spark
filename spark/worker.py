@@ -19,7 +19,7 @@ import os
 import logging as log
 import time
 
-from spark.connection import *
+from spark.connection import JobStatus, ServerErrorException
 from spark.joblog import JobLog
 
 
