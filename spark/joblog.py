@@ -24,10 +24,10 @@ from io import StringIO
 
 
 '''
-Send status information (usually in form of stdout/stderr outout)
-for a specific job to the server.
+Send status information (usually in form of stdout/stderr output)
+for a specific job to the server as well as to the local config file.
 '''
-class StatusProxy:
+class JobLog:
 
     def __init__(self, lhconn, job_id):
         self._conn = lhconn
@@ -41,9 +41,13 @@ class StatusProxy:
     def write(self, s):
         r = self._buf.write(s)
         self._buf.seek(0, os.SEEK_END)
-        if self._buf.tell() >= 4 * 1024:
+        if self._buf.tell() >= 2 * 1024:
             self._send_buffer()
         return r
+
+
+    def flush(self):
+        self._send_buffer()
 
 
     def _send_buffer(self):

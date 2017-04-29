@@ -24,7 +24,7 @@ import time
 import zmq
 
 from spark.connection import *
-from spark.statusproxy import StatusProxy
+from spark.joblog import JobLog
 
 
 class Worker:
@@ -34,7 +34,7 @@ class Worker:
         self._conf = conf
 
 
-    def _run_job(self, runner, job):
+    def _run_job(self, runner, jlog, job):
         job_id = job.get('_id')
         workspace = os.path.join(self._conf.workspace, job_id)
 
@@ -44,7 +44,14 @@ class Worker:
         self._conn.send_job_request_status(job_id, JobStatus.ACCEPTED)
 
         log.info('Running job \'{}\''.format(job_id))
-        runner.run()
+        try:
+            runner.run()
+        except:
+            import traceback
+            tb = traceback.format_exc()
+            jlog.write(tb)
+            jlog.flush()
+            self._conn.send_job_request_status(job_id, JobStatus.REJECTED)
 
 
     '''
@@ -62,14 +69,18 @@ class Worker:
             log.error(str(e))
             return
 
+        if not job_reply:
+            # there are no jobs available for us
+            return
+
         job_module = job_reply.get('module')
         job_kind   = job_reply.get('kind')
         job_id     = job_reply.get('_id')
 
-        proxy = StatusProxy(self._conn, job_id)
+        jlog = JobLog(self._conn, job_id)
         if job_module == 'isotope' and job_kind == 'image-build':
             from spark.runners.iso_build import IsoBuilder
-            return self._run_job(IsoBuilder(proxy), job_reply)
+            return self._run_job(IsoBuilder(jlog), jlog, job_reply)
         else:
             log.warning('Received job of type {0}::{1} which we can not handle.'.format(job_module, job_kind))
             self._conn.send_job_request_status(job_id, JobStatus.REJECTED)

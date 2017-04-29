@@ -97,6 +97,10 @@ class ServerConnection:
         req['_id'] = job_id
 
         self._sock.send_string(str(json.dumps(req)))
+        try:
+            self._sock.poll(4)
+        except:
+            self.__send_attempt_failed()
 
 
     '''
@@ -135,7 +139,7 @@ class ServerConnection:
         try:
             job_reply = json.loads(str(job_reply_raw, 'utf-8'))
         except Exception as e:
-            raise MessageException('Unable to decode server reply: {}'.format(str(e)))
+            raise MessageException('Unable to decode server reply ({0}): {1}'.format(job_reply_raw, str(e)))
         if not job_reply:
             log.debug('No new jobs.')
             return None

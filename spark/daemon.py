@@ -52,9 +52,6 @@ class Daemon:
 
 
     def run(self):
-        if zmq.zmq_version_info() < (4,0):
-            raise RuntimeError("Security is not supported in libzmq version < 4.0. libzmq version {0}".format(zmq.zmq_version()))
-
         self._conf = LocalConfig()
         self._conf.load()
 
