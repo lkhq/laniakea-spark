@@ -19,6 +19,7 @@ import json
 import os
 from pathlib import Path
 
+
 '''
 Local configuration for the spark daemon.
 '''
@@ -33,7 +34,7 @@ class LocalConfig:
         with open(fname) as json_file:
             jdata = json.load(json_file)
 
-        self._machine_id = Path('/etc/machine-id').read_text().strip('\n').strip()
+        machine_id_secret = Path('/etc/machine-id').read_text().strip('\n').strip()
         self._machine_name = jdata.get('MachineName')
         if not self._machine_name:
             self._machine_name = Path('/etc/hostname').read_text().strip('\n').strip()
@@ -48,6 +49,26 @@ class LocalConfig:
         self._server_cert_fname = os.path.join(self.CERTS_BASE_DIR, '{0}_lighthouse-server.pub'.format(self.machine_name))
 
         self._workspace = str(jdata['Workspace'])
+
+        self._make_machine_id(machine_id_secret)
+
+
+    def _make_machine_id(self, secret_id):
+        bkey = self._machine_name + secret_id
+
+        try:
+            from hashlib import blake2b
+
+            self._machine_id = blake2b(key=bkey.encode('utf-8'), digest_size=32).hexdigest()
+        except ImportError:
+            from hashlib import sha1
+            # fall back to SHA1 - this sucks a bit, as the machine ID will change as soon
+            # as the client has Python 3.6, so we should raise the minimum version requirement
+            # as soon as we can.
+            h = sha1()
+            h.update(bkey.encode('utf-8'))
+            self._machine_id = h.hexdigest()[:32]
+
 
     @property
     def machine_id(self) -> str:
