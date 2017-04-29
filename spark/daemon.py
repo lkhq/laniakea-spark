@@ -20,9 +20,9 @@ import sys
 import logging as log
 from multiprocessing import Process
 import zmq
-import zmq.auth
 
 from spark.config import LocalConfig
+from spark.connection import ServerConnection
 from spark.worker import Worker
 
 class Daemon:
@@ -40,24 +40,14 @@ class Daemon:
     def run_worker_process(self, worker_name):
         zctx = zmq.Context()
 
-        # initialize Lighthouse socket
-        lhsock = zctx.socket(zmq.DEALER)
-
-        # set server certificate
-        server_public, _ = zmq.auth.load_certificate(self._conf.server_cert_fname)
-        lhsock.curve_serverkey = server_public
-
-        # set client certificate
-        client_secret_file = os.path.join(self._conf.client_cert_fname)
-        client_public, client_secret = zmq.auth.load_certificate(client_secret_file)
-        lhsock.curve_secretkey = client_secret
-        lhsock.curve_publickey = client_public
+        # initialize Lighthouse connection
+        conn = ServerConnection(self._conf, zctx)
 
         # connect
-        lhsock.connect(self._conf.lighthouse_server)
+        conn.connect()
         log.info('Running {0} on {1} ({2})'.format(worker_name, self._conf.machine_name, self._conf.machine_id))
 
-        w = Worker(self._conf, lhsock)
+        w = Worker(self._conf, conn)
         w.run()
 
 

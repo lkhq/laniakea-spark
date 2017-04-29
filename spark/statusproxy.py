@@ -29,15 +29,14 @@ for a specific job to the server.
 '''
 class StatusProxy:
 
-    def __init__(self, socket, machine_name, machine_id, job_id):
-        self._sock = socket
+    def __init__(self, lhconn, job_id):
+        self._conn = lhconn
         self._buf = StringIO()
 
-        self._msg_template = {}
+        self._msg_template = self._conn.new_base_request()
         self._msg_template['request'] = 'job-status'
         self._msg_template['_id']     = str(job_id)
-        self._msg_template['machine_name'] = str(machine_name)
-        self._msg_template['machine_id']   = str(machine_id)
+
 
     def write(self, s):
         r = self._buf.write(s)
@@ -46,6 +45,7 @@ class StatusProxy:
             self._send_buffer()
         return r
 
+
     def _send_buffer(self):
         log_excerpt = self._buf.getvalue()
         self._buf = StringIO()
@@ -53,4 +53,4 @@ class StatusProxy:
         req = dict(self._msg_template) # copy the template
         req['log_excerpt'] = log_excerpt
 
-        self._sock.send_json(req)
+        self._conn.send_str_noreply(str(json.dumps(req)))

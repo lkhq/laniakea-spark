@@ -23,46 +23,15 @@ import json
 import time
 import zmq
 
+from spark.connection import *
 from spark.statusproxy import StatusProxy
-
-
-class JobStatus:
-    ACCEPTED = 'accepted'
-    REJECTED = 'rejected'
 
 
 class Worker:
 
-    def __init__(self, conf, lighthouse_socket):
-        self._lhsock = lighthouse_socket
+    def __init__(self, conf, lighthouse_connection):
+        self._conn = lighthouse_connection
         self._conf = conf
-
-
-    def _base_request_data(self):
-        req = {}
-        req['machine_name'] = self._conf.machine_name
-        req['machine_id'] = self._conf.machine_id
-
-        return req
-
-
-    def _construct_job_request_message(self):
-        req = self._base_request_data()
-
-        req['request'] = 'job'
-        req['accepts'] = ['*']
-        req['architectures'] = ['*']
-
-        return str(json.dumps(req))
-
-
-    def _send_job_status(self, job_id, status):
-        req = self._base_request_data()
-
-        req['request'] = 'job-{}'.format(status)
-        req['_id'] = job_id
-
-        self._lhsock.send_string(str(json.dumps(req)))
 
 
     def _run_job(self, runner, job):
@@ -70,9 +39,9 @@ class Worker:
         workspace = os.path.join(self._conf.workspace, job_id)
 
         if not runner.set_job(job, workspace):
-            self._send_job_status(job_id, JobStatus.REJECTED)
+            self._conn.send_job_request_status(job_id, JobStatus.REJECTED)
             return
-        self._send_job_status(job_id, JobStatus.ACCEPTED)
+        self._conn.send_job_request_status(job_id, JobStatus.ACCEPTED)
 
         log.info('Running job \'{}\''.format(job_id))
         runner.run()
@@ -82,44 +51,28 @@ class Worker:
     Request a new job.
     '''
     def _request_job(self):
-        poller = zmq.Poller()
-        poller.register(self._lhsock, zmq.POLLIN)
-        self._lhsock.send_string(self._construct_job_request_message())
-
-        # wait 5sec for a reply
-        job_reply_raw = None
-        if (poller.poll(5000)):
-            job_reply_raw = self._lhsock.recv()
-        else:
-            log.error('Job request expired (the master server might be unreachable).')
-            return
 
         job_reply = None
         try:
-            job_reply = json.loads(str(job_reply_raw, 'utf-8'))
+            job_reply = self._conn.request_job()
+        except ServerErrorException as e:
+            log.warning(str(e))
+            return
         except Exception as e:
-            log.error('Unable to decode server reply: {}'.format(str(e)))
-            return
-        if not job_reply:
-            log.debug('No new jobs.')
-            return
-
-        server_error = job_reply.get('error')
-        if server_error:
-            log.warning('Received error message from server: {}'.format(server_error))
+            log.error(str(e))
             return
 
         job_module = job_reply.get('module')
         job_kind   = job_reply.get('kind')
         job_id     = job_reply.get('_id')
 
-        proxy = StatusProxy(self._lhsock, self._conf.machine_name, self._conf._machine_id, job_id)
+        proxy = StatusProxy(self._conn, job_id)
         if job_module == 'isotope' and job_kind == 'image-build':
             from spark.runners.iso_build import IsoBuilder
             return self._run_job(IsoBuilder(proxy), job_reply)
         else:
             log.warning('Received job of type {0}::{1} which we can not handle.'.format(job_module, job_kind))
-            self._send_job_status(job_id, JobStatus.REJECTED)
+            self._conn.send_job_request_status(job_id, JobStatus.REJECTED)
         log.info(job_reply)
 
 
