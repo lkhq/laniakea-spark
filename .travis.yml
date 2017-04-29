@@ -1,14 +1,17 @@
 # Travis CI config for Laniakea Spark
-language: c
-sudo: required
+language: python
 dist: trusty
 
-services:
-  - docker
+python:
+  - "3.5"
+  - "3.6"
+  - "nightly" # currently points to 3.7-dev
 
-before_script:
-  - docker build -t lkbuild -f tests/ci/Dockerfile .
+install:
+ - pip install flake8
+ - pip install -r requirements.txt
 
 script:
-  - docker run -t -e DC=$DC -v `pwd`:/build lkbuild
-    ./tests/ci/build_and_test.sh
+  - ./setup.py build
+  - ./setup.py install
+  - flake8 --ignore E501,E303,E261,F403 spark/
