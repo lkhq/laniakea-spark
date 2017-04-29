@@ -18,6 +18,7 @@
 import os
 import json
 from io import StringIO
+from contextlib import contextmanager
 
 
 class JobLog:
@@ -26,9 +27,10 @@ class JobLog:
     for a specific job to the server as well as to the local config file.
     """
 
-    def __init__(self, lhconn, job_id):
+    def __init__(self, lhconn, job_id, log_fname):
         self._conn = lhconn
         self._buf = StringIO()
+        self._file = open(log_fname, 'w')
 
         self._msg_template = self._conn.new_base_request()
         self._msg_template['request'] = 'job-status'
@@ -36,15 +38,17 @@ class JobLog:
 
 
     def write(self, s):
-        r = self._buf.write(s)
+        self._buf.write(s)
+        self._file.write(s)
+
         self._buf.seek(0, os.SEEK_END)
-        if self._buf.tell() >= 2 * 1024:
+        if self._buf.tell() >= 2 * 512:
             self._send_buffer()
-        return r
 
 
     def flush(self):
         self._send_buffer()
+        self._file.flush()
 
 
     def _send_buffer(self):
@@ -55,3 +59,17 @@ class JobLog:
         req['log_excerpt'] = log_excerpt
 
         self._conn.send_str_noreply(str(json.dumps(req)))
+
+
+    def close(self):
+        self.flush()
+        self._file.close()
+
+
+@contextmanager
+def joblog(lhconn, job_id, log_fname):
+    jlog = JobLog(lhconn, job_id, log_fname)
+    try:
+        yield jlog
+    finally:
+        jlog.close()

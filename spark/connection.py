@@ -25,6 +25,8 @@ import logging as log
 class JobStatus:
     ACCEPTED = 'accepted'
     REJECTED = 'rejected'
+    SUCCESS  = 'success'
+    FAILED   = 'failed'
 
 
 class ReplyException(Exception):
@@ -87,7 +89,7 @@ class ServerConnection:
         self.connect()
 
 
-    def send_job_request_status(self, job_id, status):
+    def send_job_status(self, job_id, status):
         req = self.new_base_request()
 
         req['request'] = 'job-{}'.format(status)

@@ -16,12 +16,13 @@
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
 from schroot import schroot
+from spark.utils import cd
 
 
 class IsoBuilder:
 
-    def __init__(self, jlog):
-        self._jlog = jlog
+    def __init__(self):
+        pass
 
     def set_job(self, job, workspace):
         self._job_data = job
@@ -37,19 +38,20 @@ class IsoBuilder:
         self._chroot_name = '{0}-{1}'.format(suite_name, arch)
         return True
 
-    def run(self):
-        with schroot(self._chroot_name) as chroot:
+    def run(self, jlog):
+        with cd('/tmp'):
+            with schroot(self._chroot_name) as chroot:
 
-            out, err, ret = chroot.run([
-                'apt-get', 'install', '-y', 'hello'
-            ], user='root')
+                out, err, ret = chroot.run([
+                    'apt-get', 'install', '-y', 'hello'
+                ], user='root')
 
-            self._jlog.write(out)
-            self._jlog.write(err)
+                jlog.write(out)
+                jlog.write(err)
 
-            out, err, ret = chroot.run([
-                'apt-get', 'install', '-y', 'git'
-            ], user='root')
+                out, err, ret = chroot.run([
+                    'apt-get', 'install', '-y', 'git'
+                ], user='root')
 
-            self._jlog.write(out)
-            self._jlog.write(err)
+                jlog.write(out)
+                jlog.write(err)

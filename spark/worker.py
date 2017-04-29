@@ -20,7 +20,7 @@ import logging as log
 import time
 
 from spark.connection import JobStatus, ServerErrorException
-from spark.joblog import JobLog
+from spark.joblog import joblog
 
 
 class Worker:
@@ -30,24 +30,40 @@ class Worker:
         self._conf = conf
 
 
-    def _run_job(self, runner, jlog, job):
+    def _run_job(self, runner, job):
+        from spark.utils import cd
+
         job_id = job.get('_id')
         workspace = os.path.join(self._conf.workspace, job_id)
+        artifacts_dir = os.path.join(workspace, 'artifacts')
 
         if not runner.set_job(job, workspace):
-            self._conn.send_job_request_status(job_id, JobStatus.REJECTED)
+            self._conn.send_job_status(job_id, JobStatus.REJECTED)
             return
-        self._conn.send_job_request_status(job_id, JobStatus.ACCEPTED)
+        self._conn.send_job_status(job_id, JobStatus.ACCEPTED)
 
         log.info('Running job \'{}\''.format(job_id))
-        try:
-            runner.run()
-        except:
-            import traceback
-            tb = traceback.format_exc()
-            jlog.write(tb)
-            jlog.flush()
-            self._conn.send_job_request_status(job_id, JobStatus.REJECTED)
+        if not os.path.exists(artifacts_dir):
+            os.makedirs(artifacts_dir)
+
+        log_fname = os.path.join(artifacts_dir, '{}.log'.format(job_id))
+        success = False
+        with cd(workspace):
+            with joblog(self._conn, job_id, log_fname) as jlog:
+                try:
+                    success = runner.run(jlog)
+                except:
+                    import traceback
+                    tb = traceback.format_exc()
+                    jlog.write(tb)
+                    jlog.flush()
+                    self._conn.send_job_status(job_id, JobStatus.REJECTED)
+                    log.info('Rejected job {}'.format(job_id))
+        if success:
+            self._conn.send_job_status(job_id, JobStatus.SUCCESS)
+        else:
+            self._conn.send_job_status(job_id, JobStatus.FAILED)
+        log.info('Finished job {}'.format(job_id))
 
 
     def _request_job(self):
@@ -73,13 +89,12 @@ class Worker:
         job_kind   = job_reply.get('kind')
         job_id     = job_reply.get('_id')
 
-        jlog = JobLog(self._conn, job_id)
         if job_module == 'isotope' and job_kind == 'image-build':
             from spark.runners.iso_build import IsoBuilder
-            return self._run_job(IsoBuilder(jlog), jlog, job_reply)
+            return self._run_job(IsoBuilder(), job_reply)
         else:
             log.warning('Received job of type {0}::{1} which we can not handle.'.format(job_module, job_kind))
-            self._conn.send_job_request_status(job_id, JobStatus.REJECTED)
+            self._conn.send_job_status(job_id, JobStatus.REJECTED)
         log.info(job_reply)
 
 
