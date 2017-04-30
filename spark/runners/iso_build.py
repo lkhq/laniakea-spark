@@ -66,14 +66,17 @@ class IsoBuilder:
             commands.append('lb config')
             commands.append('lb build')
 
+            commands.append('b2sum *.iso *.contents *.zsync *.packages > checksums.b2sum')
+            commands.append('sha256sum *.iso *.contents *.zsync *.packages > checksums.sha256sum')
+
             # save artifacts
             commands.append('mv *.iso {}/'.format(results_dir))
             commands.append('mv -f *.zsync {}/'.format(results_dir))
             commands.append('mv -f *.contents {}/'.format(results_dir))
             commands.append('mv -f *.files {}/'.format(results_dir))
             commands.append('mv -f *.packages {}/'.format(results_dir))
-            commands.append('mv -f *.b2sums {}/'.format(results_dir))
-            commands.append('mv -f *.sha256sums {}/'.format(results_dir))
+            commands.append('mv -f *.b2sum {}/'.format(results_dir))
+            commands.append('mv -f *.sha256sum {}/'.format(results_dir))
 
             with make_commandfile(jlog.job_id, commands) as shfname:
                 chroot_copy(chroot, shfname, shfname)
@@ -84,7 +87,7 @@ class IsoBuilder:
                     return False
 
                 ret = chroot_run_logged(chroot, jlog, [
-                    shfname
+                    '/usr/bin/stdbuf', '-oL', '-eL', shfname
                 ], user='root')
                 if ret:
                     return False

@@ -15,7 +15,6 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
 import json
 from io import StringIO
 from contextlib import contextmanager
@@ -33,6 +32,7 @@ class JobLog:
         self._file = open(log_fname, 'w')
         self._last_msg_excerpt = ''
         self._job_id = job_id
+        self._buf_len = 0
 
         self._msg_template = self._conn.new_base_request()
         self._msg_template['request'] = 'job-status'
@@ -42,11 +42,10 @@ class JobLog:
     def write(self, s):
         if isinstance(s, (bytes, bytearray)):
             s = str(s, 'utf-8')
-        self._buf.write(s)
+        self._buf_len = self._buf.write(s) + self._buf_len
         self._file.write(s)
 
-        self._buf.seek(0, os.SEEK_END)
-        if self._buf.tell() >= 2 * 256:
+        if self._buf_len >= 2 * 256:
             self._send_buffer()
 
 
@@ -67,6 +66,7 @@ class JobLog:
 
         self._conn.send_str_noreply(str(json.dumps(req)))
         self._last_msg_excerpt = log_excerpt
+        self._buf_len = 0
 
 
     def close(self):

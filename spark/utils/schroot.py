@@ -71,20 +71,20 @@ def lkworkspace(wsdir):
 
 
 def chroot_run_logged(schroot, jlog, cmd, **kwargs):
-    p = schroot.Popen(cmd, **kwargs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    p = schroot.Popen(cmd, **kwargs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=128)
 
     sel = select.poll()
     sel.register(p.stdout, select.POLLIN)
     while True:
-        if sel.poll(1):
+        if sel.poll(2):
             jlog.write(p.stdout.read())
         else:
-            time.sleep(1) # wait a little for the process to write more output
+            time.sleep(4) # wait a little for the process to write more output
         if p.poll() is not None:
             if sel.poll(1):
                 jlog.write(p.stdout.read())
             break
-    ret = p.poll()
+    ret = p.returncode
     if ret:
         jlog.write('Command {0} failed with error code {1}'.format(cmd, ret))
     return ret

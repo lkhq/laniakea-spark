@@ -98,10 +98,11 @@ class Worker:
                 files = []
                 for f in glob.glob('*'):
                     files.append(f)
+
                 files.append(log_fname)
+                shutil.copyfile(log_fname, os.path.basename(log_fname))
 
                 for f in files:
-                    shutil.copyfile(f, os.path.basename(f))
                     dud.add_file(os.path.basename(f))
 
                 dudf = "{}.dud".format(job_id)
