@@ -13,5 +13,5 @@ install:
 
 script:
   - ./setup.py build
-  - ./setup.py install
+  - ./setup.py install --root=/tmp
   - flake8 --ignore E501,E303,E261,E302,E221 spark/
