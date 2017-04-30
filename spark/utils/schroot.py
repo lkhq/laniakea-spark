@@ -53,15 +53,6 @@ def spark_schroot(name, job_id):
 
 
 @contextmanager
-def cd(where):
-    ncwd = os.getcwd()
-    try:
-        yield os.chdir(where)
-    finally:
-        os.chdir(ncwd)
-
-
-@contextmanager
 def lkworkspace(wsdir):
     import shutil
     artifacts_dir = os.path.join(wsdir, 'artifacts')
@@ -81,26 +72,6 @@ def lkworkspace(wsdir):
 
 def chroot_run_logged(schroot, jlog, cmd, **kwargs):
     p = schroot.Popen(cmd, **kwargs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-
-    sel = select.poll()
-    sel.register(p.stdout, select.POLLIN)
-    while True:
-        if sel.poll(1):
-            jlog.write(p.stdout.read())
-        else:
-            time.sleep(1) # wait a little for the process to write more output
-        if p.poll() is not None:
-            if sel.poll(1):
-                jlog.write(p.stdout.read())
-            break
-    ret = p.poll()
-    if ret:
-        jlog.write('Command {0} failed with error code {1}'.format(cmd, ret))
-    return ret
-
-
-def run_logged(jlog, cmd, **kwargs):
-    p = subprocess.Popen(cmd, **kwargs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
     sel = select.poll()
     sel.register(p.stdout, select.POLLIN)
