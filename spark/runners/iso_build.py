@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
-from spark.utils.schroot import spark_schroot, chroot_run_logged, make_commandfile, chroot_copy
+from spark.utils.schroot import spark_schroot, chroot_run_logged, make_commandfile, chroot_copy, chroot_upgrade
 
 
 class IsoBuilder:
@@ -40,6 +40,7 @@ class IsoBuilder:
 
     def run(self, jlog):
         with spark_schroot(self._chroot_name, self._job_id) as (chroot, wsdir, results_dir):
+            chroot_upgrade(chroot, jlog)
 
             # install git
             ret = chroot_run_logged(chroot, jlog, [
@@ -56,13 +57,15 @@ class IsoBuilder:
                 return False
 
             # construct build recipe
+            # preamble
             commands = []
             commands.append('cd {}'.format(wsdir))
             commands.append('git clone --depth=2 {0} {1}/lb'.format(self._job_data.get('liveBuildGit'), wsdir))
             commands.append('cd ./lb')
 
-            for cmd in self._job_data.get('commands'):
-                commands.append(cmd)
+            # the actual build commands
+            commands.append('lb config')
+            commands.append('lb build')
 
             # save artifacts
             commands.append('mv *.iso {}/'.format(results_dir))

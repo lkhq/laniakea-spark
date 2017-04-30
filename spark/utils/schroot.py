@@ -138,3 +138,18 @@ def make_commandfile(job_id, commands):
     f.flush()
     yield f.name
     f.close()
+
+
+def chroot_upgrade(chroot, jlog):
+    ret = chroot_run_logged(chroot, jlog, [
+        'apt-get', 'update'
+    ], user='root')
+    if ret:
+        return False
+
+    ret = chroot_run_logged(chroot, jlog, [
+        'apt-get', 'full-upgrade', '-y'
+    ], user='root')
+    if ret:
+        return False
+    return True
