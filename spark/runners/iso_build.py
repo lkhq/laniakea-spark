@@ -15,9 +15,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
 from schroot import schroot
-from spark.utils import cd, chroot_run_logged
+from spark.utils import cd, chroot_run_logged, make_commandfile, chroot_copy
 
 
 class IsoBuilder:
@@ -26,6 +25,7 @@ class IsoBuilder:
         pass
 
     def set_job(self, job, workspace):
+        self._job_id = job.get('_id')
         self._job_data = job
         self._workspace = workspace
 
@@ -42,21 +42,55 @@ class IsoBuilder:
     def run(self, jlog):
         with cd('/tmp'):
             with schroot(self._chroot_name) as chroot:
+                # install git
                 ret = chroot_run_logged(chroot, jlog, [
-                    'mkdir', '-p', '/srv/lb'
+                    'apt-get', 'install', '-y', 'git', 'ca-certificates'
                 ], user='root')
                 if ret:
                     return False
 
-                ret = chroot_run_logged(chroot, jlog, [
-                    'apt-get', 'install', '-y', 'git'
-                ], user='root')
-                if ret:
-                    return False
-
+                # we also want live-build to be present
                 ret = chroot_run_logged(chroot, jlog, [
                     'apt-get', 'install', '-y', 'live-build'
                 ], user='root')
+                if ret:
+                    return False
+
+                # the workspace dir name inside the chroot
+                wsdir = '/workspace/{}'.format(self._job_id)
+                wsdir_res_dir = '/workspace/{}/artifacts'.format(self._job_id)
+
+                # construct build recipe
+                commands = []
+                commands.append('cd {}'.format(wsdir))
+                commands.append('git clone --depth=2 {0} {1}/lb'.format(self._job_data.get('liveBuildGit'), wsdir))
+                commands.append('cd ./lb')
+
+                for cmd in self._job_data.get('commands'):
+                    commands.append(cmd)
+
+                # save artifacts
+                commands.append('mv *.iso {}/'.format(wsdir_res_dir))
+                commands.append('mv -f *.zsync {}/'.format(wsdir_res_dir))
+                commands.append('mv -f *.contents {}/'.format(wsdir_res_dir))
+                commands.append('mv -f *.files {}/'.format(wsdir_res_dir))
+                commands.append('mv -f *.packages {}/'.format(wsdir_res_dir))
+                commands.append('mv -f *.b2sums {}/'.format(wsdir_res_dir))
+                commands.append('mv -f *.sha256sums {}/'.format(wsdir_res_dir))
+
+                with make_commandfile(self._job_id, commands) as shfname:
+                    chroot_copy(chroot, shfname, shfname)
+                    ret = chroot_run_logged(chroot, jlog, [
+                        'chmod', '+x', shfname
+                    ], user='root')
+                    if ret:
+                        return False
+
+                    ret = chroot_run_logged(chroot, jlog, [
+                        shfname
+                    ], user='root')
+                    if ret:
+                        return False
 
                 if ret:
                     return False

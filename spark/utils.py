@@ -19,7 +19,9 @@ import os
 import subprocess
 import select
 import time
+import logging as log
 from contextlib import contextmanager
+from tempfile import NamedTemporaryFile
 
 
 @contextmanager
@@ -29,6 +31,24 @@ def cd(where):
         yield os.chdir(where)
     finally:
         os.chdir(ncwd)
+
+
+@contextmanager
+def lkworkspace(wsdir):
+    import shutil
+    artifacts_dir = os.path.join(wsdir, 'artifacts')
+    if not os.path.exists(artifacts_dir):
+        os.makedirs(artifacts_dir)
+
+    ncwd = os.getcwd()
+    try:
+        yield os.chdir(wsdir)
+    finally:
+        os.chdir(ncwd)
+        try:
+            shutil.rmtree(wsdir)
+        except Exception as e:
+            log.warning('Unable to remove stale workspace {0}: {1}'.format(wsdir, str(e)))
 
 
 def chroot_run_logged(schroot, jlog, cmd, **kwargs):
@@ -41,7 +61,9 @@ def chroot_run_logged(schroot, jlog, cmd, **kwargs):
             jlog.write(p.stdout.read())
         else:
             time.sleep(1) # wait a little for the process to write more output
-        if p.poll() != None:
+        if p.poll() is not None:
+            if sel.poll(1):
+                jlog.write(p.stdout.read())
             break
     ret = p.poll()
     if ret:
@@ -59,9 +81,32 @@ def run_logged(jlog, cmd, **kwargs):
             jlog.write(p.stdout.read())
         else:
             time.sleep(1) # wait a little for the process to write more output
-        if p.poll() != None:
+        if p.poll() is not None:
+            if sel.poll(1):
+                jlog.write(p.stdout.read())
             break
     ret = p.poll()
     if ret:
         jlog.write('Command {0} failed with error code {1}'.format(cmd, ret))
     return ret
+
+
+def chroot_copy(chroot, what, whence, user=None):
+    import shutil
+    with chroot.create_file(whence, user) as f:
+        with open(what, 'rb') as src:
+            shutil.copyfileobj(src, f)
+
+
+@contextmanager
+def make_commandfile(job_id, commands):
+    f = NamedTemporaryFile('w', suffix='.sh', prefix='{}-'.format(job_id))
+    f.write('#!/bin/sh\n')
+    f.write('set -e\n')
+    f.write('set -x\n')
+    f.write('\n')
+    for cmd in commands:
+        f.write(cmd + '\n')
+    f.flush()
+    yield f.name
+    f.close()

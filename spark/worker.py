@@ -31,7 +31,7 @@ class Worker:
 
 
     def _run_job(self, runner, job):
-        from spark.utils import cd
+        from spark.utils import lkworkspace
 
         job_id = job.get('_id')
         workspace = os.path.join(self._conf.workspace, job_id)
@@ -49,7 +49,7 @@ class Worker:
 
         log_fname = os.path.join(artifacts_dir, '{}.log'.format(job_id))
         success = False
-        with cd(workspace):
+        with lkworkspace(workspace):
             with joblog(self._conn, job_id, log_fname) as jlog:
                 try:
                     success = runner.run(jlog)

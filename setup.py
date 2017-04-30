@@ -14,6 +14,14 @@ scripts = {
     ],
 }
 
+data_files = [('/etc/schroot/spark',
+                 ['data/schroot/copyfiles',
+                  'data/schroot/fstab',
+                  'data/schroot/nssdatabases']),
+              ('/var/lib/lkspark/workspace',
+                 ['data/ws/README'])
+             ]
+
 long_description = ""
 
 setup(
@@ -21,6 +29,7 @@ setup(
     version=__version__,
     scripts=[],
     packages=packages,
+    data_files=data_files,
     author="Matthias Klumpp",
     author_email="matthias@tenstral.net",
     long_description=long_description,
