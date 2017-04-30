@@ -15,11 +15,11 @@ scripts = {
     ],
 }
 
-data_files = [('/etc/schroot/spark',
+data_files = [('/etc/schroot/spark/',
                  ['data/schroot/copyfiles',
                   'data/schroot/fstab',
                   'data/schroot/nssdatabases']),
-              ('/var/lib/lkspark/workspace',
+              ('/var/lib/lkspark/',
                  ['data/ws/README'])
              ]
 

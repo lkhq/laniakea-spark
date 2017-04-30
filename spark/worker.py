@@ -34,7 +34,7 @@ class Worker:
         from spark.utils.schroot import lkworkspace
 
         job_id = job.get('_id')
-        workspace = os.path.join(self._conf.workspace, job_id)
+        workspace = os.path.join(self._conf.workspace_dir, job_id)
         artifacts_dir = os.path.join(workspace, 'artifacts')
 
         if not runner.set_job(job, workspace):
@@ -46,8 +46,10 @@ class Worker:
         log.info('Running job \'{}\''.format(job_id))
         if not os.path.exists(artifacts_dir):
             os.makedirs(artifacts_dir)
+        if not os.path.exists(self._conf.job_log_dir):
+            os.makedirs(self._conf.job_log_dir)
 
-        log_fname = os.path.join(artifacts_dir, '{}.log'.format(job_id))
+        log_fname = os.path.join(self._conf.job_log_dir, '{}.log'.format(job_id))
         success = False
         with lkworkspace(workspace):
             with joblog(self._conn, job_id, log_fname) as jlog:

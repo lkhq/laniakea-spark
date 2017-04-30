@@ -55,9 +55,11 @@ class LocalConfig:
         self._client_cert_fname = os.path.join(self.CERTS_BASE_DIR, 'secret', '{0}_private.sec'.format(self.machine_name))
         self._server_cert_fname = os.path.join(self.CERTS_BASE_DIR, '{0}_lighthouse-server.pub'.format(self.machine_name))
 
-        self._workspace = jdata.get('Workspace')
-        if not self._workspace:
-            self._workspace = '/var/lib/lkspark/workspace/'
+        workspace_root = jdata.get('WorkspaceRoot')
+        if not workspace_root:
+            workspace_root = '/var/lib/lkspark/'
+        self._workspace_dir = os.path.join(workspace_root, 'workspaces')
+        self._job_log_dir = os.path.join(workspace_root, 'logs')
 
         self._architectures = jdata.get("Architectures")
         if not self._architectures:
@@ -116,8 +118,12 @@ class LocalConfig:
         return self._server_cert_fname
 
     @property
-    def workspace(self) -> str:
-        return self._workspace
+    def workspace_dir(self) -> str:
+        return self._workspace_dir
+
+    @property
+    def job_log_dir(self) -> str:
+        return self._job_log_dir
 
     @property
     def supported_architectures(self) -> List[str]:
