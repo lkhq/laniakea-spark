@@ -24,7 +24,6 @@ class IsoBuilder:
         pass
 
     def set_job(self, job, workspace):
-        self._job_id = job.get('_id')
         self._job_data = job
         self._workspace = workspace
 
@@ -39,7 +38,7 @@ class IsoBuilder:
         return True
 
     def run(self, jlog):
-        with spark_schroot(self._chroot_name, self._job_id) as (chroot, wsdir, results_dir):
+        with spark_schroot(self._chroot_name, jlog.job_id) as (chroot, wsdir, results_dir):
             chroot_upgrade(chroot, jlog)
 
             # install git
@@ -76,7 +75,7 @@ class IsoBuilder:
             commands.append('mv -f *.b2sums {}/'.format(results_dir))
             commands.append('mv -f *.sha256sums {}/'.format(results_dir))
 
-            with make_commandfile(self._job_id, commands) as shfname:
+            with make_commandfile(jlog.job_id, commands) as shfname:
                 chroot_copy(chroot, shfname, shfname)
                 ret = chroot_run_logged(chroot, jlog, [
                     'chmod', '+x', shfname

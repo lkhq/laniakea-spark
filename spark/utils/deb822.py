@@ -67,7 +67,7 @@ class Changes(Changes_):
                 self[key].append({
                     "md5sum": m.hexdigest(),
                     "size": size,
-                    "section": 'debile',
-                    "priority": 'debile',
+                    "section": 'spark',
+                    "priority": 'spark',
                     "name": fp
                 })

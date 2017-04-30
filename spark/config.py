@@ -46,7 +46,9 @@ class LocalConfig:
         machine_id_secret = Path('/etc/machine-id').read_text().strip('\n').strip()
         self._make_machine_id(machine_id_secret)
 
-        self._lighthouse_server = jdata['LighthouseServer']
+        self._lighthouse_server = jdata.get('LighthouseServer')
+        if not self._lighthouse_server:
+            raise Exception('The "LighthouseServer" configuration entry is missing. Please specify the address of a Lighthouse server.')
 
         self._max_jobs = int(jdata.get("MaxJobs", 1))
         if self._max_jobs < 1:
@@ -74,6 +76,13 @@ class LocalConfig:
             else:
                 self._architectures = [machine_str]
                 log.warning('Using auto-detected architecture name: {}'.format(machine_str))
+
+        self._dput_host = jdata.get('DputHost')
+        if not self._dput_host:
+            raise Exception('The essential "DputHost" configuration entry is missing.')
+        self._gpg_key_uid = jdata.get('GpgKeyUID')
+        if not self._dput_host:
+            raise Exception('The essential "GpgKeyUID" configuration entry is missing.')
 
 
     def _make_machine_id(self, secret_id):
@@ -128,3 +137,11 @@ class LocalConfig:
     @property
     def supported_architectures(self) -> List[str]:
         return self._architectures
+
+    @property
+    def dput_host(self) -> str:
+        return self._dput_host
+
+    @property
+    def gpg_key_uid(self) -> str:
+        return self._gpg_key_uid

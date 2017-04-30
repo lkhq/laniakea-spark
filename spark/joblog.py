@@ -32,6 +32,7 @@ class JobLog:
         self._buf = StringIO()
         self._file = open(log_fname, 'w')
         self._last_msg_excerpt = ''
+        self._job_id = job_id
 
         self._msg_template = self._conn.new_base_request()
         self._msg_template['request'] = 'job-status'
@@ -71,6 +72,11 @@ class JobLog:
     def close(self):
         self.flush()
         self._file.close()
+
+
+    @property
+    def job_id(self) -> str:
+        return self._job_id
 
 
 @contextmanager

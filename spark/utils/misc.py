@@ -17,22 +17,19 @@
 
 import os
 from contextlib import contextmanager
-from spark.utils.command import run_logged, safe_run
+from spark.utils.command import safe_run
 
 
-def sign(jlog, changes, gpg):
+def sign(changes, gpg):
     if changes.endswith(".dud"):
-        r = run_logged(jlog, ['gpg', '-u', gpg, '--clearsign', changes])
-        if r:
-            raise Exception('Unable to run GPG.')
+        safe_run(['gpg', '-u', gpg, '--clearsign', changes])
         os.rename("%s.asc" % (changes), changes)
     else:
-        r = run_logged(jlog, ['debsign', '-k', gpg, changes])
-        if r:
-            raise Exception('Unable to run debsign.')
+        safe_run(['debsign', '-k', gpg, changes])
 
 
-def upload(changes, host):
+def upload(changes, gpg, host):
+    sign(changes, gpg)
     return safe_run(['dput', host, changes])
 
 

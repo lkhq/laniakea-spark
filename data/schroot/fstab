@@ -9,4 +9,4 @@
 tmpfs           /dev/shm        tmpfs   defaults        0       0
 # Mount a large scratch space for the build, so we don't use up
 # space on an LVM snapshot of the chroot itself.
-/var/lib/lkspark/workspace  /workspace   none    rw,bind         0       0
+/var/lib/lkspark/workspaces  /workspaces   none    rw,bind         0       0

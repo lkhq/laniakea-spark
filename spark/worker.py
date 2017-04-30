@@ -18,6 +18,9 @@
 import os
 import logging as log
 import time
+import glob
+import shutil
+from email.utils import formatdate
 
 from spark.connection import JobStatus, ServerErrorException
 from spark.joblog import joblog
@@ -32,23 +35,34 @@ class Worker:
 
     def _run_job(self, runner, job):
         from spark.utils.schroot import lkworkspace
+        from spark.utils.deb822 import Changes
+        from spark.utils.misc import cd, upload
 
+        # basic job information
         job_id = job.get('_id')
+        job_arch = job.get('architecture')
+        if not job_arch:
+            job_arch = 'all'
+
+        # job workspace directories
         workspace = os.path.join(self._conf.workspace_dir, job_id)
         artifacts_dir = os.path.join(workspace, 'artifacts')
 
+        # try to assign the job to the runner
         if not runner.set_job(job, workspace):
             self._conn.send_job_status(job_id, JobStatus.REJECTED)
             log.info('Forwarded job \'{}\''.format(job_id))
             return
         self._conn.send_job_status(job_id, JobStatus.ACCEPTED)
 
-        log.info('Running job \'{}\''.format(job_id))
+        # set up default workspace directories
         if not os.path.exists(artifacts_dir):
             os.makedirs(artifacts_dir)
         if not os.path.exists(self._conf.job_log_dir):
             os.makedirs(self._conf.job_log_dir)
 
+        # set the logfile and run the job
+        log.info('Running job \'{}\''.format(job_id))
         log_fname = os.path.join(self._conf.job_log_dir, '{}.log'.format(job_id))
         success = False
         with lkworkspace(workspace):
@@ -63,11 +77,46 @@ class Worker:
                     log.warning(tb)
                     log.info('Rejected job {}'.format(job_id))
                     return
+
+            # safeguard in case the build process has accidentally deleted this directory
+            if not os.path.exists(artifacts_dir):
+                os.makedirs(artifacts_dir)
+
+            # logfile is closed here
+            with cd(artifacts_dir):
+                # write upload description file
+                # (upload additional artifacts which the runner hasn't dealt with,
+                # including the final logfile)
+                dud = Changes()
+                dud['Format'] = '1.8'
+                dud['Date'] = formatdate()
+                dud['Architecture'] = job_arch
+                dud['X-Spark-Job'] = str(job_id)
+                dud['X-Spark-Success'] = 'Yes' if success else 'No'
+
+                # collect list of files to upload
+                files = []
+                for f in glob.glob('*'):
+                    files.append(f)
+                files.append(log_fname)
+
+                for f in files:
+                    shutil.copyfile(f, os.path.basename(f))
+                    dud.add_file(os.path.basename(f))
+
+                dudf = "{}.dud".format(job_id)
+                with open(dudf, 'wb') as fd:
+                    dud.dump(fd=fd)
+
+                # send the result to the remote server
+                upload(dudf, self._conf.gpg_key_uid, self._conf.dput_host)
+
+        jstatus = JobStatus.FAILED
         if success:
-            self._conn.send_job_status(job_id, JobStatus.SUCCESS)
-        else:
-            self._conn.send_job_status(job_id, JobStatus.FAILED)
-        log.info('Finished job {}'.format(job_id))
+            jstatus = JobStatus.SUCCESS
+
+        self._conn.send_job_status(job_id, jstatus)
+        log.info('Finished job {0}, {1}'.format(job_id, str(jstatus)))
 
 
     def _request_job(self):

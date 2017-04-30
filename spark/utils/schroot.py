@@ -31,8 +31,8 @@ def spark_schroot(name, job_id):
     ch = SchrootChroot()
 
     # the workspace dir name inside the chroot
-    wsdir = '/workspace/{}'.format(job_id)
-    results_dir = '/workspace/{}/artifacts'.format(job_id)
+    wsdir = '/workspaces/{}'.format(job_id)
+    results_dir = '/workspaces/{}/artifacts'.format(job_id)
 
     try:
         # change to neutral directory

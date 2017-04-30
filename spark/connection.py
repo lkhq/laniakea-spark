@@ -97,7 +97,7 @@ class ServerConnection:
 
         self._sock.send_string(str(json.dumps(req)))
         try:
-            self._sock.poll(4)
+            self._sock.poll(4000)
         except:
             self.__send_attempt_failed()
 
@@ -128,12 +128,16 @@ class ServerConnection:
         self._sock.send_string(str(json.dumps(req)))
 
         # wait 5sec for a reply
-        job_reply_raw = None
+        job_reply_msgs = None
         if (poller.poll(5000)):
-            job_reply_raw = self._sock.recv()
+            job_reply_msgs = self._sock.recv_multipart()
         else:
             self._send_attempt_failed()
             raise ReplyException('Job request expired (the master server might be unreachable).')
+
+        if not job_reply_msgs:
+            raise ReplyException('Invalid server response on a job request.')
+        job_reply_raw = job_reply_msgs[0]
 
         job_reply = None
         try:
