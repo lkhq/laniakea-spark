@@ -31,6 +31,7 @@ class JobLog:
         self._conn = lhconn
         self._buf = StringIO()
         self._file = open(log_fname, 'w')
+        self._last_msg_excerpt = ''
 
         self._msg_template = self._conn.new_base_request()
         self._msg_template['request'] = 'job-status'
@@ -38,27 +39,33 @@ class JobLog:
 
 
     def write(self, s):
+        if isinstance(s, (bytes, bytearray)):
+            s = str(s, 'utf-8')
         self._buf.write(s)
         self._file.write(s)
 
         self._buf.seek(0, os.SEEK_END)
-        if self._buf.tell() >= 2 * 512:
+        if self._buf.tell() >= 2 * 256:
             self._send_buffer()
 
 
     def flush(self):
-        self._send_buffer()
+        self._send_buffer(self._last_msg_excerpt)
         self._file.flush()
 
 
-    def _send_buffer(self):
+    def _send_buffer(self, prefix=None):
         log_excerpt = self._buf.getvalue()
         self._buf = StringIO()
+
+        if prefix:
+            log_excerpt = prefix + log_excerpt
 
         req = dict(self._msg_template) # copy the template
         req['log_excerpt'] = log_excerpt
 
         self._conn.send_str_noreply(str(json.dumps(req)))
+        self._last_msg_excerpt = log_excerpt
 
 
     def close(self):

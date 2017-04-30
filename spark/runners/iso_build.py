@@ -15,8 +15,9 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 from schroot import schroot
-from spark.utils import cd
+from spark.utils import cd, chroot_run_logged
 
 
 class IsoBuilder:
@@ -41,17 +42,22 @@ class IsoBuilder:
     def run(self, jlog):
         with cd('/tmp'):
             with schroot(self._chroot_name) as chroot:
-
-                out, err, ret = chroot.run([
-                    'apt-get', 'install', '-y', 'hello'
+                ret = chroot_run_logged(chroot, jlog, [
+                    'mkdir', '-p', '/srv/lb'
                 ], user='root')
+                if ret:
+                    return False
 
-                jlog.write(out)
-                jlog.write(err)
-
-                out, err, ret = chroot.run([
+                ret = chroot_run_logged(chroot, jlog, [
                     'apt-get', 'install', '-y', 'git'
                 ], user='root')
+                if ret:
+                    return False
 
-                jlog.write(out)
-                jlog.write(err)
+                ret = chroot_run_logged(chroot, jlog, [
+                    'apt-get', 'install', '-y', 'live-build'
+                ], user='root')
+
+                if ret:
+                    return False
+        return True

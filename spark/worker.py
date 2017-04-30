@@ -39,6 +39,7 @@ class Worker:
 
         if not runner.set_job(job, workspace):
             self._conn.send_job_status(job_id, JobStatus.REJECTED)
+            log.info('Forwarded job \'{}\''.format(job_id))
             return
         self._conn.send_job_status(job_id, JobStatus.ACCEPTED)
 
@@ -56,9 +57,10 @@ class Worker:
                     import traceback
                     tb = traceback.format_exc()
                     jlog.write(tb)
-                    jlog.flush()
                     self._conn.send_job_status(job_id, JobStatus.REJECTED)
+                    log.warning(tb)
                     log.info('Rejected job {}'.format(job_id))
+                    return
         if success:
             self._conn.send_job_status(job_id, JobStatus.SUCCESS)
         else:
@@ -95,7 +97,6 @@ class Worker:
         else:
             log.warning('Received job of type {0}::{1} which we can not handle.'.format(job_module, job_kind))
             self._conn.send_job_status(job_id, JobStatus.REJECTED)
-        log.info(job_reply)
 
 
     def run(self):
