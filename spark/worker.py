@@ -31,7 +31,7 @@ class Worker:
 
 
     def _run_job(self, runner, job):
-        from spark.utils import lkworkspace
+        from spark.utils.schroot import lkworkspace
 
         job_id = job.get('_id')
         workspace = os.path.join(self._conf.workspace, job_id)

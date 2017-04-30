@@ -22,6 +22,34 @@ import time
 import logging as log
 from contextlib import contextmanager
 from tempfile import NamedTemporaryFile
+from schroot.chroot import SchrootChroot
+
+
+@contextmanager
+def spark_schroot(name, job_id):
+    ncwd = os.getcwd()
+    ch = SchrootChroot()
+
+    # the workspace dir name inside the chroot
+    wsdir = '/workspace/{}'.format(job_id)
+    results_dir = '/workspace/{}/artifacts'.format(job_id)
+
+    try:
+        # change to neutral directory
+        os.chdir('/tmp')
+        ch.start(name)
+        yield (ch, wsdir, results_dir)
+    finally:
+        try:
+            # hack to allow the worker to delete the newly created files
+            ch.run([
+                'chmod', '-R', '777', wsdir
+            ], user='root')
+        except:
+            pass
+
+        ch.end()
+        os.chdir(ncwd)
 
 
 @contextmanager

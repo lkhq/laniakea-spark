@@ -5,6 +5,7 @@ from setuptools import setup
 
 packages = [
     'spark',
+    'spark.utils',
     'spark.runners',
 ]
 
