@@ -8,7 +8,7 @@ Type=simple
 Restart=on-failure
 User=lkspark
 Group=lkspark
-ExecStart=@LKSPARK_INSTALL_BIN@
+ExecStart=/usr/local/bin/lk-spark
 
 [Install]
 WantedBy=multi-user.target
