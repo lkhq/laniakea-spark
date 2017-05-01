@@ -71,7 +71,7 @@ def lkworkspace(wsdir):
 
 
 def chroot_run_logged(schroot, jlog, cmd, **kwargs):
-    p = schroot.Popen(cmd, **kwargs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=128)
+    p = schroot.Popen(cmd, **kwargs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
     sel = select.poll()
     sel.register(p.stdout, select.POLLIN)

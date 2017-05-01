@@ -73,7 +73,7 @@ def safe_run(cmd, input=None, expected=0):
 
 
 def run_logged(jlog, cmd, **kwargs):
-    p = subprocess.Popen(cmd, **kwargs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False, bufsize=128)
+    p = subprocess.Popen(cmd, **kwargs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
 
     sel = select.poll()
     sel.register(p.stdout, select.POLLIN)
