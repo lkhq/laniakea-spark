@@ -80,14 +80,9 @@ class IsoBuilder:
 
             with make_commandfile(jlog.job_id, commands) as shfname:
                 chroot_copy(chroot, shfname, shfname)
-                ret = chroot_run_logged(chroot, jlog, [
-                    'chmod', '+x', shfname
-                ], user='root')
-                if ret:
-                    return False
 
                 ret = chroot_run_logged(chroot, jlog, [
-                    '/usr/bin/stdbuf', '-oL', '-eL', shfname
+                    'sh', '-e', shfname
                 ], user='root')
                 if ret:
                     return False
