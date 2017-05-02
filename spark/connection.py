@@ -41,6 +41,10 @@ class ServerErrorException(Exception):
     pass
 
 
+# maximum amount of time to wait for a server response
+RESPONSE_WAIT_TIME = 6000 # 6sec
+
+
 class ServerConnection:
 
     def __init__(self, conf, ctx):
@@ -97,7 +101,7 @@ class ServerConnection:
 
         self._sock.send_string(str(json.dumps(req)))
         try:
-            self._sock.poll(4000)
+            self._sock.poll(RESPONSE_WAIT_TIME)
         except:
             self.__send_attempt_failed()
 
@@ -129,7 +133,7 @@ class ServerConnection:
 
         # wait 5sec for a reply
         job_reply_msgs = None
-        if (poller.poll(5000)):
+        if (poller.poll(RESPONSE_WAIT_TIME)):
             job_reply_msgs = self._sock.recv_multipart()
         else:
             self._send_attempt_failed()

@@ -154,4 +154,4 @@ class Worker:
     def run(self):
         while True:
             self._request_job()
-            time.sleep(20) # wait 20s before trying again
+            time.sleep(30) # wait 30s before trying again
