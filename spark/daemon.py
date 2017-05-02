@@ -66,10 +66,12 @@ class Daemon:
         log.info('Maximum number of parallel jobs: {0}'.format(self._conf.max_jobs))
 
         # initialize workers
-        self._workers = []
-        for i in range(0, self._conf.max_jobs):
-            worker_name = 'worker_{}'.format(i)
-            p = Process(target=self.run_worker_process, args=(worker_name,))
-            p.name = worker_name
-            p.start()
-            self._workers.append(p)
+        if self._conf.max_jobs == 1:
+            # don't use multiprocess when our maximum amount of jobs is just 1
+            self.run_worker_process('worker_0')
+        else:
+            for i in range(0, self._conf.max_jobs):
+                worker_name = 'worker_{}'.format(i)
+                p = Process(target=self.run_worker_process, args=(worker_name,))
+                p.name = worker_name
+                p.start()
