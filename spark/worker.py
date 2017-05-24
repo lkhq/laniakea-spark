@@ -110,7 +110,12 @@ class Worker:
                     dud.dump(fd=fd)
 
                 # send the result to the remote server
-                upload(dudf, self._conf.gpg_key_uid, self._conf.dput_host)
+                try:
+                    upload(dudf, self._conf.gpg_key_uid, self._conf.dput_host)
+                except Exception as e:
+                    import sys
+                    print(e, file=sys.stderr)
+                    success = False
 
         jstatus = JobStatus.FAILED
         if success:
