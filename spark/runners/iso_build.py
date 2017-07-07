@@ -59,6 +59,8 @@ class IsoBuilder:
             # construct build recipe
             # preamble
             commands = []
+            commands.append('export DEBIAN_FRONTEND=noninteractive')
+
             commands.append('cd {}'.format(wsdir))
             commands.append('git clone --depth=2 {0} {1}/lb'.format(shlex.quote(self._job_data.get('liveBuildGit')), wsdir))
             commands.append('cd ./lb')
