@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
+import shlex
 from spark.utils.schroot import spark_schroot, chroot_run_logged, make_commandfile, chroot_copy, chroot_upgrade
 
 
@@ -59,8 +60,13 @@ class IsoBuilder:
             # preamble
             commands = []
             commands.append('cd {}'.format(wsdir))
-            commands.append('git clone --depth=2 {0} {1}/lb'.format(self._job_data.get('liveBuildGit'), wsdir))
+            commands.append('git clone --depth=2 {0} {1}/lb'.format(shlex.quote(self._job_data.get('liveBuildGit')), wsdir))
             commands.append('cd ./lb')
+
+            # flavor env var
+            flavor = self._job_data.get('flavor')
+            if flavor:
+                commands.append('export FLAVOR="{}"'.format(shlex.quote(flavor)))
 
             # the actual build commands
             commands.append('lb config')
