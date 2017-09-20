@@ -36,7 +36,7 @@ class JobLog:
 
         self._msg_template = self._conn.new_base_request()
         self._msg_template['request'] = 'job-status'
-        self._msg_template['_id']     = str(job_id)
+        self._msg_template['lkid']    = str(job_id)
 
 
     def write(self, s):

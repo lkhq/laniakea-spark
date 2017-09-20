@@ -25,10 +25,12 @@ class IsoBuilder:
         pass
 
     def set_job(self, job, workspace):
-        self._job_data = job
         self._workspace = workspace
+        self._job_data = job.get('data')
+        if not self._job_data:
+            return False
 
-        suite_name = job.get('suite')
+        suite_name = self._job_data.get('suite')
         arch = job.get('architecture')
         if not suite_name:
             return False

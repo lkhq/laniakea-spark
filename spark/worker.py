@@ -39,7 +39,7 @@ class Worker:
         from spark.utils.misc import cd, upload
 
         # basic job information
-        job_id = job.get('_id')
+        job_id = job.get('lkid')
         job_arch = job.get('architecture')
         if not job_arch:
             job_arch = 'all'
@@ -146,7 +146,7 @@ class Worker:
 
         job_module = job_reply.get('module')
         job_kind   = job_reply.get('kind')
-        job_id     = job_reply.get('_id')
+        job_id     = job_reply.get('lkid')
 
         if job_module == 'isotope' and job_kind == 'image-build':
             from spark.runners.iso_build import IsoBuilder

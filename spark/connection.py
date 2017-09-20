@@ -97,7 +97,7 @@ class ServerConnection:
         req = self.new_base_request()
 
         req['request'] = 'job-{}'.format(status)
-        req['_id'] = job_id
+        req['lkid'] = job_id
 
         self._sock.send_string(str(json.dumps(req)))
         try:
