@@ -5,7 +5,11 @@ dist: trusty
 python:
   - "3.5"
   - "3.6"
-  - "nightly" # currently points to 3.7-dev
+  - "nightly"
+
+matrix:
+  allow_failures:
+    - python: "nightly"
 
 install:
  - pip install flake8
