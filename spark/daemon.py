@@ -46,7 +46,7 @@ class Daemon:
 
         # connect
         conn.connect()
-        log.info('Running {0} on {1} ({2})'.format(worker_name, self._conf.machine_name, self._conf.machine_id))
+        log.info('Running {0} on {1} ({2})'.format(worker_name, self._conf.machine_name, self._conf.client_uuid))
 
         w = Worker(self._conf, conn)
         w.run()

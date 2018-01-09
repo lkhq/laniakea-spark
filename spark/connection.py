@@ -65,7 +65,7 @@ class ServerConnection:
         # construct base data to include in all requests to the server
         self._base_req = {}
         self._base_req['machine_name'] = self._conf.machine_name
-        self._base_req['machine_id'] = self._conf.machine_id
+        self._base_req['machine_id'] = self._conf.client_uuid
 
         # initialize Lighthouse socket
         self._sock = self._zctx.socket(zmq.DEALER)
@@ -97,7 +97,7 @@ class ServerConnection:
         req = self.new_base_request()
 
         req['request'] = 'job-{}'.format(status)
-        req['lkid'] = job_id
+        req['uuid'] = job_id
 
         self._sock.send_string(str(json.dumps(req)))
         try:

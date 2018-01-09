@@ -42,9 +42,11 @@ class LocalConfig:
         if not self._machine_name:
             self._machine_name = Path('/etc/hostname').read_text().strip('\n').strip()
 
-        # create machine ID from its name and the unique identifier it has
-        machine_id_secret = Path('/etc/machine-id').read_text().strip('\n').strip()
-        self._make_machine_id(machine_id_secret)
+        # read the machine ID
+        self._machine_id = Path('/etc/machine-id').read_text().strip('\n').strip()
+
+        # make an UUID for this client from the machine name
+        self._make_client_uuid(self._machine_name)
 
         self._lighthouse_server = jdata.get('LighthouseServer')
         if not self._lighthouse_server:
@@ -85,26 +87,19 @@ class LocalConfig:
             raise Exception('The essential "GpgKeyUID" configuration entry is missing.')
 
 
-    def _make_machine_id(self, secret_id):
-        bkey = self._machine_name + secret_id
+    def _make_client_uuid(self, machine_name):
+        import uuid
 
-        try:
-            from hashlib import blake2b
-
-            self._machine_id = blake2b(key=bkey.encode('utf-8'), digest_size=32).hexdigest()
-        except ImportError:
-            from hashlib import sha1
-            # fall back to SHA1 - this sucks a bit, as the machine ID will change as soon
-            # as the client has Python 3.6, so we should raise the minimum version requirement
-            # as soon as we can.
-            h = sha1()
-            h.update(bkey.encode('utf-8'))
-            self._machine_id = h.hexdigest()[:32]
-
+        client_uuid = uuid.uuid5(uuid.UUID('d44a99a2-0b5d-415b-808a-790ad4684309'), machine_name)
+        self._client_uuid = str(client_uuid)
 
     @property
     def machine_id(self) -> str:
         return self._machine_id
+
+    @property
+    def client_uuid(self) -> str:
+        return self._client_uuid
 
     @property
     def machine_name(self) -> str:
