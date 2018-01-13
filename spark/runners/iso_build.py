@@ -22,6 +22,10 @@ import shlex
 from spark.utils.schroot import spark_schroot, chroot_run_logged, make_commandfile, chroot_copy, chroot_upgrade
 
 
+def get_version():
+    return ('isobuild', '0.1')
+
+
 def run(jlog, job, jdata):
     suite_name = jdata.get('suite')
     arch = job.get('architecture')
