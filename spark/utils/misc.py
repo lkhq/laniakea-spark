@@ -1,4 +1,6 @@
-# Copyright (C) 2017 Matthias Klumpp <matthias@tenstral.net>
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2017-2018 Matthias Klumpp <matthias@tenstral.net>
 #
 # Licensed under the GNU Lesser General Public License Version 3
 #
@@ -16,6 +18,8 @@
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import tempfile
+import shutil
 from contextlib import contextmanager
 from spark.utils.command import safe_run
 
@@ -40,3 +44,12 @@ def cd(where):
         yield os.chdir(where)
     finally:
         os.chdir(ncwd)
+
+
+@contextmanager
+def tdir():
+    fp = tempfile.mkdtemp()
+    try:
+        yield fp
+    finally:
+        shutil.rmtree(fp)

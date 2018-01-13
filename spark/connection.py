@@ -1,4 +1,6 @@
-# Copyright (C) 2017 Matthias Klumpp <matthias@tenstral.net>
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2017-2018 Matthias Klumpp <matthias@tenstral.net>
 #
 # Licensed under the GNU Lesser General Public License Version 3
 #
@@ -125,7 +127,7 @@ class ServerConnection:
         # construct job request
         req = dict(self._base_req)
         req['request'] = 'job'
-        req['accepts'] = ['*']
+        req['accepts'] = self._conf.accepted_job_kinds
         req['architectures'] = self._conf.supported_architectures
 
         # request job

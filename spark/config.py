@@ -1,4 +1,6 @@
-# Copyright (C) 2017 Matthias Klumpp <matthias@tenstral.net>
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2017-2018 Matthias Klumpp <matthias@tenstral.net>
 #
 # Licensed under the GNU Lesser General Public License Version 3
 #
@@ -79,6 +81,10 @@ class LocalConfig:
                 self._architectures = [machine_str]
                 log.warning('Using auto-detected architecture name: {}'.format(machine_str))
 
+        self._accepted_job_kinds = jdata.get("AcceptedJobs")
+        if not self._accepted_job_kinds:
+            raise Exception('The essential "AcceptedJobs" configuration entry is missing - without accepting any job type, running this daemon is pointless.')
+
         self._dput_host = jdata.get('DputHost')
         if not self._dput_host:
             raise Exception('The essential "DputHost" configuration entry is missing.')
@@ -104,6 +110,10 @@ class LocalConfig:
     @property
     def machine_name(self) -> str:
         return self._machine_name
+
+    @property
+    def accepted_job_kinds(self) -> List[str]:
+        return self._accepted_job_kinds
 
     @property
     def lighthouse_server(self) -> str:

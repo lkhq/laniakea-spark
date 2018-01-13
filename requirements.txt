@@ -1,3 +1,4 @@
 pyzmq>=16
 schroot>=0.4
 python-debian>=0.1.28
+firehose>=0.5

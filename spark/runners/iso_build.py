@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+#
 # Copyright (C) 2017 Matthias Klumpp <matthias@tenstral.net>
 #
 # Licensed under the GNU Lesser General Public License Version 3
@@ -19,84 +21,79 @@ import shlex
 from spark.utils.schroot import spark_schroot, chroot_run_logged, make_commandfile, chroot_copy, chroot_upgrade
 
 
-class IsoBuilder:
+def run(jlog, job, jdata):
+    suite_name = jdata.get('suite')
+    arch = job.get('architecture')
+    if not suite_name:
+        return False, None, None
+    if not arch:
+        return False, None, None
 
-    def __init__(self):
-        pass
+    chroot_name = '{0}-{1}'.format(suite_name, arch)
 
-    def set_job(self, job, workspace):
-        self._workspace = workspace
-        self._job_data = job.get('data')
-        if not self._job_data:
-            return False
+    with spark_schroot(chroot_name, jlog.job_id) as (chroot, wsdir, results_dir):
+        chroot_upgrade(chroot, jlog)
 
-        suite_name = self._job_data.get('suite')
-        arch = job.get('architecture')
-        if not suite_name:
-            return False
-        if not arch:
-            return False
+        # install git
+        ret = chroot_run_logged(chroot, jlog, [
+           'apt-get', 'install', '-y', 'git', 'ca-certificates'
+        ], user='root')
+        if ret:
+            return False, None, None
 
-        self._chroot_name = '{0}-{1}'.format(suite_name, arch)
-        return True
+        # we also want live-build to be present
+        ret = chroot_run_logged(chroot, jlog, [
+           'apt-get', 'install', '-y', 'live-build'
+        ], user='root')
+        if ret:
+            return False, None, None
 
-    def run(self, jlog):
-        with spark_schroot(self._chroot_name, jlog.job_id) as (chroot, wsdir, results_dir):
-            chroot_upgrade(chroot, jlog)
+        # construct build recipe
+        # preamble
+        commands = []
+        commands.append('export DEBIAN_FRONTEND=noninteractive')
 
-            # install git
+        commands.append('cd {}'.format(wsdir))
+        commands.append('git clone --depth=2 {0} {1}/lb'.format(shlex.quote(self._job_data.get('live_build_git')), wsdir))
+        commands.append('cd ./lb')
+
+        # flavor env var
+        flavor = jdata.get('flavor')
+        if flavor:
+            commands.append('export FLAVOR="{}"'.format(shlex.quote(flavor)))
+
+        # the actual build commands
+        commands.append('lb config')
+        commands.append('lb build')
+
+        commands.append('b2sum *.iso *.contents *.zsync *.packages > checksums.b2sum')
+        commands.append('sha256sum *.iso *.contents *.zsync *.packages > checksums.sha256sum')
+
+        # save artifacts (move to internal bindmounted directory)
+        results_dir = '/workspaces/{}/artifacts'.format(job_id)
+        commands.append('mv *.iso {}/'.format(results_dir))
+        commands.append('mv -f *.zsync {}/'.format(results_dir))
+        commands.append('mv -f *.contents {}/'.format(results_dir))
+        commands.append('mv -f *.files {}/'.format(results_dir))
+        commands.append('mv -f *.packages {}/'.format(results_dir))
+        commands.append('mv -f *.b2sum {}/'.format(results_dir))
+        commands.append('mv -f *.sha256sum {}/'.format(results_dir))
+
+        with make_commandfile(jlog.job_id, commands) as shfname:
+            chroot_copy(chroot, shfname, shfname)
+
             ret = chroot_run_logged(chroot, jlog, [
-                'apt-get', 'install', '-y', 'git', 'ca-certificates'
+                'sh', '-e', shfname
             ], user='root')
             if ret:
-                return False
+                return False, None, None
 
-            # we also want live-build to be present
-            ret = chroot_run_logged(chroot, jlog, [
-                'apt-get', 'install', '-y', 'live-build'
-            ], user='root')
-            if ret:
-                return False
+        if ret:
+            return False, None, None
 
-            # construct build recipe
-            # preamble
-            commands = []
-            commands.append('export DEBIAN_FRONTEND=noninteractive')
+    # collect list of files to upload
+    files = []
+    for f in glob.glob('result/*'):
+        files.append(f)
 
-            commands.append('cd {}'.format(wsdir))
-            commands.append('git clone --depth=2 {0} {1}/lb'.format(shlex.quote(self._job_data.get('liveBuildGit')), wsdir))
-            commands.append('cd ./lb')
-
-            # flavor env var
-            flavor = self._job_data.get('flavor')
-            if flavor:
-                commands.append('export FLAVOR="{}"'.format(shlex.quote(flavor)))
-
-            # the actual build commands
-            commands.append('lb config')
-            commands.append('lb build')
-
-            commands.append('b2sum *.iso *.contents *.zsync *.packages > checksums.b2sum')
-            commands.append('sha256sum *.iso *.contents *.zsync *.packages > checksums.sha256sum')
-
-            # save artifacts
-            commands.append('mv *.iso {}/'.format(results_dir))
-            commands.append('mv -f *.zsync {}/'.format(results_dir))
-            commands.append('mv -f *.contents {}/'.format(results_dir))
-            commands.append('mv -f *.files {}/'.format(results_dir))
-            commands.append('mv -f *.packages {}/'.format(results_dir))
-            commands.append('mv -f *.b2sum {}/'.format(results_dir))
-            commands.append('mv -f *.sha256sum {}/'.format(results_dir))
-
-            with make_commandfile(jlog.job_id, commands) as shfname:
-                chroot_copy(chroot, shfname, shfname)
-
-                ret = chroot_run_logged(chroot, jlog, [
-                    'sh', '-e', shfname
-                ], user='root')
-                if ret:
-                    return False
-
-            if ret:
-                return False
-        return True
+    return True, files, None

@@ -1,4 +1,6 @@
-# Copyright (C) 2016-2017 Matthias Klumpp <matthias@tenstral.net>
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2016-2018 Matthias Klumpp <matthias@tenstral.net>
 # Copyright (C) 2012-2013 Paul Tagliamonte <paultag@debian.org>
 #
 # Licensed under the GNU Lesser General Public License Version 3
@@ -20,6 +22,7 @@ import shlex
 import subprocess
 import select
 import time
+from io import StringIO
 
 
 class SubprocessError(Exception):
@@ -72,21 +75,37 @@ def safe_run(cmd, input=None, expected=0):
     return out, err, ret
 
 
-def run_logged(jlog, cmd, **kwargs):
+
+
+def run_logged(jlog, cmd, return_output=False, **kwargs):
+
+    def bytes2str(s):
+        if isinstance(s, (bytes, bytearray)):
+            s = str(s, 'utf-8')
+        return s
+
     p = subprocess.Popen(cmd, **kwargs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
 
+    outbuf = StringIO()
     sel = select.poll()
     sel.register(p.stdout, select.POLLIN)
     while True:
-        if sel.poll(1):
-            jlog.write(p.stdout.read())
+        if sel.poll(2):
+            so = bytes2str(p.stdout.read())
+            jlog.write(so)
+            if return_output:
+                outbuf.write(so)
         else:
-            time.sleep(1) # wait a little for the process to write more output
+            time.sleep(4) # wait a little for the process to write more output
         if p.poll() is not None:
             if sel.poll(1):
-                jlog.write(p.stdout.read())
+                so = bytes2str(p.stdout.read())
+                jlog.write(so)
+                if return_output:
+                    outbuf.write(so)
             break
-    ret = p.poll()
+    ret = p.returncode
     if ret:
         jlog.write('Command {0} failed with error code {1}'.format(cmd, ret))
-    return ret
+
+    return ret, outbuf.getvalue()

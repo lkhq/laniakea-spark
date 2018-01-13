@@ -1,4 +1,6 @@
-# Copyright (C) 2017 Matthias Klumpp <matthias@tenstral.net>
+# -*- coding: utf-8 -*-
+#
+# Copyright (C) 2017-2018 Matthias Klumpp <matthias@tenstral.net>
 #
 # Licensed under the GNU Lesser General Public License Version 3
 #
@@ -32,7 +34,7 @@ def spark_schroot(name, job_id):
 
     # the workspace dir name inside the chroot
     wsdir = '/workspaces/{}'.format(job_id)
-    results_dir = '/workspaces/{}/artifacts'.format(job_id)
+    results_dir = '/workspaces/{}/result'.format(job_id)
 
     try:
         # change to neutral directory
