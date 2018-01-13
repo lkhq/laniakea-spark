@@ -20,7 +20,6 @@
 import os
 import logging as log
 import time
-import glob
 import shutil
 from email.utils import formatdate
 

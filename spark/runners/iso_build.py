@@ -17,6 +17,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
+import glob
 import shlex
 from spark.utils.schroot import spark_schroot, chroot_run_logged, make_commandfile, chroot_copy, chroot_upgrade
 
@@ -30,20 +31,21 @@ def run(jlog, job, jdata):
         return False, None, None
 
     chroot_name = '{0}-{1}'.format(suite_name, arch)
+    job_id = jlog.job_id
 
     with spark_schroot(chroot_name, jlog.job_id) as (chroot, wsdir, results_dir):
         chroot_upgrade(chroot, jlog)
 
         # install git
         ret = chroot_run_logged(chroot, jlog, [
-           'apt-get', 'install', '-y', 'git', 'ca-certificates'
+            'apt-get', 'install', '-y', 'git', 'ca-certificates'
         ], user='root')
         if ret:
             return False, None, None
 
         # we also want live-build to be present
         ret = chroot_run_logged(chroot, jlog, [
-           'apt-get', 'install', '-y', 'live-build'
+            'apt-get', 'install', '-y', 'live-build'
         ], user='root')
         if ret:
             return False, None, None
@@ -54,7 +56,7 @@ def run(jlog, job, jdata):
         commands.append('export DEBIAN_FRONTEND=noninteractive')
 
         commands.append('cd {}'.format(wsdir))
-        commands.append('git clone --depth=2 {0} {1}/lb'.format(shlex.quote(self._job_data.get('live_build_git')), wsdir))
+        commands.append('git clone --depth=2 {0} {1}/lb'.format(shlex.quote(jdata.get('live_build_git')), wsdir))
         commands.append('cd ./lb')
 
         # flavor env var
