@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2017 Matthias Klumpp <matthias@tenstral.net>
+# Copyright (C) 2017-2018 Matthias Klumpp <matthias@tenstral.net>
 #
 # Licensed under the GNU Lesser General Public License Version 3
 #
@@ -17,6 +17,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 import glob
 import shlex
 from spark.utils.schroot import spark_schroot, chroot_run_logged, make_commandfile, chroot_copy, chroot_upgrade
@@ -76,7 +77,7 @@ def run(jlog, job, jdata):
         commands.append('sha256sum *.iso *.contents *.zsync *.packages > checksums.sha256sum')
 
         # save artifacts (move to internal bindmounted directory)
-        results_dir = '/workspaces/{}/artifacts'.format(job_id)
+        results_dir = '/workspaces/{}/result'.format(job_id)
         commands.append('mv *.iso {}/'.format(results_dir))
         commands.append('mv -f *.zsync {}/'.format(results_dir))
         commands.append('mv -f *.contents {}/'.format(results_dir))
@@ -100,6 +101,6 @@ def run(jlog, job, jdata):
     # collect list of files to upload
     files = []
     for f in glob.glob('result/*'):
-        files.append(f)
+        files.append(os.path.abspath(f))
 
     return True, files, None
