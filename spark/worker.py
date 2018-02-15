@@ -119,8 +119,8 @@ class Worker:
                 # send the result to the remote server
                 try:
                     if changes:
-                        upload(changes, self._conf.gpg_key_uid, self._conf.dput_host)
-                    upload(dudf, self._conf.gpg_key_uid, self._conf.dput_host)
+                        upload(changes, self._conf.gpg_key_id, self._conf.dput_host)
+                    upload(dudf, self._conf.gpg_key_id, self._conf.dput_host)
                 except Exception as e:
                     import sys
                     print(e, file=sys.stderr)
@@ -135,9 +135,9 @@ class Worker:
 
 
     def _request_job(self):
-        """
+        '''
         Request a new job.
-        """
+        '''
 
         job_reply = None
         try:
@@ -168,4 +168,4 @@ class Worker:
     def run(self):
         while True:
             if not self._request_job():
-                time.sleep(30) # wait 30s before trying again
+                time.sleep(30)  # wait 30s before trying again

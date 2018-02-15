@@ -88,7 +88,7 @@ class LocalConfig:
         self._dput_host = jdata.get('DputHost')
         if not self._dput_host:
             raise Exception('The essential "DputHost" configuration entry is missing.')
-        self._gpg_key_uid = jdata.get('GpgKeyUID')
+        self._gpg_key_id = jdata.get('GpgKeyID')
         if not self._dput_host:
             raise Exception('The essential "GpgKeyUID" configuration entry is missing.')
 
@@ -148,5 +148,5 @@ class LocalConfig:
         return self._dput_host
 
     @property
-    def gpg_key_uid(self) -> str:
-        return self._gpg_key_uid
+    def gpg_key_id(self) -> str:
+        return self._gpg_key_id
