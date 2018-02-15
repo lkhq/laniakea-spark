@@ -40,6 +40,11 @@ class Worker:
 
 
     def _run_job(self, job):
+        '''
+        Run a job. Return True if the job was handled in some
+        way and we did not reject it again.
+        '''
+
         from spark.utils.schroot import lkworkspace
         from spark.utils.deb822 import Changes
         from spark.utils.misc import cd, upload
@@ -69,7 +74,7 @@ class Worker:
         if not PLUGINS.get(runner_name):
             self._conn.send_job_status(job_id, JobStatus.REJECTED)
             log.info('Forwarded job \'{}\' - no runner for kind "{}"'.format(job_id, job['kind']))
-            return
+            return False
 
         self._conn.send_job_status(job_id, JobStatus.ACCEPTED)
 
@@ -85,7 +90,7 @@ class Worker:
                     self._conn.send_job_status(job_id, JobStatus.REJECTED)
                     log.warning(tb)
                     log.info('Rejected job {}'.format(job_id))
-                    return
+                    return False
 
             # logfile is closed here
             if not files:
@@ -133,6 +138,8 @@ class Worker:
         self._conn.send_job_status(job_id, jstatus)
         log.info('Finished job {0}, {1}'.format(job_id, str(jstatus)))
 
+        return True
+
 
     def _request_job(self):
         '''
@@ -144,10 +151,10 @@ class Worker:
             job_reply = self._conn.request_job()
         except ServerErrorException as e:
             log.warning(str(e))
-            return
+            return False
         except Exception as e:
             log.error(str(e))
-            return
+            return False
 
         if not job_reply:
             # there are no jobs available for us
