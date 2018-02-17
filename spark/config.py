@@ -89,8 +89,8 @@ class LocalConfig:
         if not self._dput_host:
             raise Exception('The essential "DputHost" configuration entry is missing.')
         self._gpg_key_id = jdata.get('GpgKeyID')
-        if not self._dput_host:
-            raise Exception('The essential "GpgKeyUID" configuration entry is missing.')
+        if not self._gpg_key_id:
+            raise Exception('The essential "GpgKeyID" configuration entry is missing.')
 
 
     def _make_client_uuid(self, machine_name):
