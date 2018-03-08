@@ -161,12 +161,9 @@ def sbuild(jlog, dsc, maintainer, suite, affinity, build_arch, build_indep, anal
     return (analysis, out, ftbfs, changes)
 
 
-@contextmanager
 def checkout(dsc_url):
-    with tdir() as path:
-        with cd(path):
-            safe_run(["dget", "-u", "-d", dsc_url])
-            yield os.path.basename(dsc_url)
+    safe_run(["dget", "-u", "-d", dsc_url])
+    return os.path.basename(dsc_url)
 
 
 def get_version():
@@ -192,9 +189,9 @@ def run(jlog, job, jdata):
                                build_arch,
                                get_version)
 
-    with checkout(jdata['dsc_url']) as dsc:
-        firehose, out, ftbfs, changes, = \
-            sbuild(jlog, dsc, maintainer, jdata['suite'], job['architecture'], build_arch, build_indep, firehose)
+    dsc = checkout(jdata['dsc_url'])
+    firehose, out, ftbfs, changes, = \
+        sbuild(jlog, dsc, maintainer, jdata['suite'], job['architecture'], build_arch, build_indep, firehose)
 
     if not changes and not ftbfs:
         print(out)
@@ -203,7 +200,7 @@ def run(jlog, job, jdata):
         raise Exception("Um. No changes but no FTBFS.")
 
     if not ftbfs:
-        changes = changes[0]
+        changes = os.path.join(os.getcwd(), changes[0])
     else:
         changes = None
 
