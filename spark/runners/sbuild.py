@@ -179,8 +179,9 @@ def get_version():
 
 
 def run(jlog, job, jdata):
-    build_arch = job['architecture'] != "all"
-    build_indep = job['architecture'] == "all" or jdata['do_indep']
+    arch_name = job['architecture']
+    build_arch = arch_name != "all"
+    build_indep = arch_name == "all" or jdata['do_indep']
     maintainer = jdata.get('maintainer')
 
     firehose = create_firehose('source',
@@ -191,7 +192,7 @@ def run(jlog, job, jdata):
 
     dsc = checkout(jdata['dsc_url'])
     firehose, out, ftbfs, changes, = \
-        sbuild(jlog, dsc, maintainer, jdata['suite'], job['architecture'], build_arch, build_indep, firehose)
+        sbuild(jlog, dsc, maintainer, jdata['suite'], arch_name, build_arch, build_indep, firehose)
 
     if not changes and not ftbfs:
         print(out)
@@ -205,7 +206,7 @@ def run(jlog, job, jdata):
         changes = None
 
     _, _, v = jdata['package_version'].rpartition(":")
-    prefix = "%s_%s_%s.%s" % (jdata['package_name'], v, build_arch, job['uuid'])
+    prefix = "%s_%s_%s.%s" % (jdata['package_name'], v, arch_name, job['uuid'])
     firehose_fname = '{prefix}.firehose.xml'.format(prefix=prefix)
 
     files = list()
