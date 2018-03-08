@@ -27,14 +27,12 @@ import firehose.parsers.gcc as fgcc
 
 from datetime import timedelta
 from io import StringIO
-from contextlib import contextmanager
 import glob
 import re
 import os
 
 from spark.utils.firehose import create_firehose
 from spark.utils.command import run_logged, run_command, safe_run
-from spark.utils.misc import tdir, cd
 
 
 STATS = re.compile("Build needed (?P<time>.*), (?P<space>.*) dis(c|k) space")
