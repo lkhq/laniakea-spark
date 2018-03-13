@@ -81,7 +81,7 @@ def run_logged(jlog, cmd, return_output=False, **kwargs):
 
     def bytes2str(s):
         if isinstance(s, (bytes, bytearray)):
-            s = str(s, 'utf-8')
+            s = str(s, 'utf-8', errors='replace')
         return s
 
     p = subprocess.Popen(cmd, **kwargs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
