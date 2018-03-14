@@ -77,6 +77,8 @@ class LocalConfig:
                 self._architectures = ['amd64']
             elif re.match('i?86', machine_str):
                 self._architectures = ['i386']
+            elif machine_str == 'aarch64':
+                self._architectures = ['arm64']
             else:
                 self._architectures = [machine_str]
                 log.warning('Using auto-detected architecture name: {}'.format(machine_str))
