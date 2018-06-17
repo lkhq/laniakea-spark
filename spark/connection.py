@@ -44,7 +44,7 @@ class ServerErrorException(Exception):
 
 
 # maximum amount of time to wait for a server response
-RESPONSE_WAIT_TIME = 6000 # 6sec
+RESPONSE_WAIT_TIME = 10000 # 10sec
 
 
 class ServerConnection:
@@ -133,7 +133,7 @@ class ServerConnection:
         # request job
         self._sock.send_string(str(json.dumps(req)))
 
-        # wait 5sec for a reply
+        # wait for a reply
         job_reply_msgs = None
         if (poller.poll(RESPONSE_WAIT_TIME)):
             job_reply_msgs = self._sock.recv_multipart()
@@ -163,7 +163,7 @@ class ServerConnection:
 
     def _send_attempt_failed(self):
         self._send_attempts = self._send_attempts + 1
-        if self._send_attempts >= 8:
+        if self._send_attempts >= 6:
             log.error('Send attempts expired, reconnecting...')
             self.reconnect()
             self._send_attempts = 0
