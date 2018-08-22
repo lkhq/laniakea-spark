@@ -18,6 +18,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 import shlex
 import subprocess
 import select
@@ -84,7 +85,9 @@ def run_logged(jlog, cmd, return_output=False, **kwargs):
             s = str(s, 'utf-8', errors='replace')
         return s
 
-    p = subprocess.Popen(cmd, **kwargs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+    env = os.environ.copy()
+    env['PYTHONUNBUFFERED'] = 'true'
+    p = subprocess.Popen(cmd, **kwargs, bufsize=1, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
 
     outbuf = StringIO()
     sel = select.poll()
