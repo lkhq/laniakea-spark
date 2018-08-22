@@ -20,7 +20,7 @@
 import os
 import glob
 import shlex
-from spark.utils.schroot import spark_schroot, chroot_run_logged, make_commandfile, chroot_copy, chroot_upgrade
+from spark.utils.workspace import make_commandfile, debspawn_run_commandfile
 
 
 def get_version():
@@ -35,68 +35,57 @@ def run(jlog, job, jdata):
     if not arch:
         return False, None, None
 
-    chroot_name = '{0}-{1}'.format(suite_name, arch)
     job_id = jlog.job_id
 
-    with spark_schroot(chroot_name, jlog.job_id) as (chroot, wsdir, results_dir):
-        chroot_upgrade(chroot, jlog)
+    # construct build recipe
+    # prerequisites
+    commands = []
+    commands.append('export DEBIAN_FRONTEND=noninteractive')
 
-        # install git
-        ret = chroot_run_logged(chroot, jlog, [
-            'apt-get', 'install', '-y', 'git', 'ca-certificates'
-        ], user='root')
+    commands.append('apt-get install -y git ca-certificates')
+    commands.append('apt-get install -y live-build')
+
+    # preamble
+    wsdir = '/srv/build/'
+    commands.append('cd {}'.format(wsdir))
+    commands.append('git clone --depth=2 {0} {1}/lb'.format(shlex.quote(jdata.get('live_build_git')), wsdir))
+    commands.append('cd ./lb')
+
+    # flavor env var
+    flavor = jdata.get('flavor')
+    if flavor:
+        commands.append('export FLAVOR="{}"'.format(shlex.quote(flavor)))
+
+    # the actual build commands
+    commands.append('lb config')
+    commands.append('lb build')
+
+    commands.append('b2sum *.iso *.contents *.zsync *.packages > checksums.b2sum')
+    commands.append('sha256sum *.iso *.contents *.zsync *.packages > checksums.sha256sum')
+
+    # save artifacts (move to internal bindmounted directory)
+    results_dir = '/srv/artifacts'.format(job_id)
+    commands.append('mv *.iso {}/'.format(results_dir))
+    commands.append('mv -f *.zsync {}/'.format(results_dir))
+    commands.append('mv -f *.contents {}/'.format(results_dir))
+    commands.append('mv -f *.files {}/'.format(results_dir))
+    commands.append('mv -f *.packages {}/'.format(results_dir))
+    commands.append('mv -f *.b2sum {}/'.format(results_dir))
+    commands.append('mv -f *.sha256sum {}/'.format(results_dir))
+
+    with make_commandfile(jlog.job_id, commands) as shfname:
+        ret, _ = debspawn_run_commandfile(jlog,
+                                          suite_name,
+                                          arch,
+                                          build_dir=None,
+                                          artifacts_dir=os.path.abspath('result/'),
+                                          command_script=shfname,
+                                          header='ISO image build for {}'.format(flavor))
         if ret:
             return False, None, None
 
-        # we also want live-build to be present
-        ret = chroot_run_logged(chroot, jlog, [
-            'apt-get', 'install', '-y', 'live-build'
-        ], user='root')
-        if ret:
-            return False, None, None
-
-        # construct build recipe
-        # preamble
-        commands = []
-        commands.append('export DEBIAN_FRONTEND=noninteractive')
-
-        commands.append('cd {}'.format(wsdir))
-        commands.append('git clone --depth=2 {0} {1}/lb'.format(shlex.quote(jdata.get('live_build_git')), wsdir))
-        commands.append('cd ./lb')
-
-        # flavor env var
-        flavor = jdata.get('flavor')
-        if flavor:
-            commands.append('export FLAVOR="{}"'.format(shlex.quote(flavor)))
-
-        # the actual build commands
-        commands.append('lb config')
-        commands.append('lb build')
-
-        commands.append('b2sum *.iso *.contents *.zsync *.packages > checksums.b2sum')
-        commands.append('sha256sum *.iso *.contents *.zsync *.packages > checksums.sha256sum')
-
-        # save artifacts (move to internal bindmounted directory)
-        results_dir = '/workspaces/{}/result'.format(job_id)
-        commands.append('mv *.iso {}/'.format(results_dir))
-        commands.append('mv -f *.zsync {}/'.format(results_dir))
-        commands.append('mv -f *.contents {}/'.format(results_dir))
-        commands.append('mv -f *.files {}/'.format(results_dir))
-        commands.append('mv -f *.packages {}/'.format(results_dir))
-        commands.append('mv -f *.b2sum {}/'.format(results_dir))
-        commands.append('mv -f *.sha256sum {}/'.format(results_dir))
-
-        with make_commandfile(jlog.job_id, commands) as shfname:
-            chroot_copy(chroot, shfname, shfname)
-
-            ret = chroot_run_logged(chroot, jlog, [
-                'sh', '-e', shfname
-            ], user='root')
-            if ret:
-                return False, None, None
-
-        if ret:
-            return False, None, None
+    if ret:
+        return False, None, None
 
     # collect list of files to upload
     files = []

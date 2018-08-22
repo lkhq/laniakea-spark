@@ -21,9 +21,7 @@ import os
 import subprocess
 import select
 import time
-import logging as log
 from contextlib import contextmanager
-from tempfile import NamedTemporaryFile
 from schroot.chroot import SchrootChroot
 
 
@@ -54,27 +52,6 @@ def spark_schroot(name, job_id):
         os.chdir(ncwd)
 
 
-@contextmanager
-def lkworkspace(wsdir):
-    import shutil
-    artifacts_dir = os.path.join(wsdir, 'artifacts')
-    if not os.path.exists(artifacts_dir):
-        os.makedirs(artifacts_dir)
-    results_dir = os.path.join(wsdir, 'result')
-    if not os.path.exists(results_dir):
-        os.makedirs(results_dir)
-
-    ncwd = os.getcwd()
-    try:
-        yield os.chdir(wsdir)
-    finally:
-        os.chdir(ncwd)
-        try:
-            shutil.rmtree(wsdir)
-        except Exception as e:
-            log.warning('Unable to remove stale workspace {0}: {1}'.format(wsdir, str(e)))
-
-
 def chroot_run_logged(schroot, jlog, cmd, **kwargs):
     p = schroot.Popen(cmd, **kwargs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
@@ -100,20 +77,6 @@ def chroot_copy(chroot, what, whence, user=None):
     with chroot.create_file(whence, user) as f:
         with open(what, 'rb') as src:
             shutil.copyfileobj(src, f)
-
-
-@contextmanager
-def make_commandfile(job_id, commands):
-    f = NamedTemporaryFile('w', suffix='.sh', prefix='{}-'.format(job_id))
-    f.write('#!/bin/sh\n')
-    f.write('set -e\n')
-    f.write('set -x\n')
-    f.write('\n')
-    for cmd in commands:
-        f.write(cmd + '\n')
-    f.flush()
-    yield f.name
-    f.close()
 
 
 def chroot_upgrade(chroot, jlog):

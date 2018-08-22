@@ -45,7 +45,7 @@ class Worker:
         way and we did not reject it again.
         '''
 
-        from spark.utils.schroot import lkworkspace
+        from spark.utils.workspace import lkworkspace
         from spark.utils.deb822 import Changes
         from spark.utils.misc import cd, upload
 
