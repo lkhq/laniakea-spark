@@ -18,6 +18,7 @@
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
+import shutil
 import logging as log
 from multiprocessing import Process
 import zmq
@@ -61,6 +62,8 @@ class Daemon:
             raise Exception('Laniakea-Spark needs Python >= 3.5 to work. Please upgrade your Python version.')
         if pyversion >= (3, 5) and pyversion < (3, 6):
             log.info('Running on Python 3.5 while Python 3.6 is recommended.')
+        if not shutil.which('debspawn'):
+            log.warning('The "debspawn" tool was not found in PATH, we will not be able to run most actions.')
 
         self._conf = LocalConfig()
         self._conf.load()

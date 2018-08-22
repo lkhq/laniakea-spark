@@ -25,7 +25,7 @@ Determine which runner is responsible for which job type.
 '''
 PLUGINS = {
     "iso-image-build": "spark.runners.iso_build",
-    "package-build": "spark.runners.sbuild",
+    "package-build": "spark.runners.debspawn",
 }
 
 
