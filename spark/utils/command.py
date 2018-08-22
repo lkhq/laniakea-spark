@@ -77,7 +77,6 @@ def safe_run(cmd, input=None, expected=0):
 
 
 
-
 def run_logged(jlog, cmd, return_output=False, **kwargs):
 
     def bytes2str(s):
@@ -87,7 +86,7 @@ def run_logged(jlog, cmd, return_output=False, **kwargs):
 
     env = os.environ.copy()
     env['PYTHONUNBUFFERED'] = 'true'
-    p = subprocess.Popen(cmd, **kwargs, bufsize=1, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+    p = subprocess.Popen(cmd, **kwargs, bufsize=0, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
 
     outbuf = StringIO()
     sel = select.poll()
