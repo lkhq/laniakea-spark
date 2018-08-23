@@ -84,9 +84,11 @@ def debspawn_build(jlog, dsc, maintainer, suite, affinity, build_arch, build_ind
               '--results-dir={cwd}'.format(cwd=os.getcwd())]
 
     if build_arch and not build_indep:
-        ds_cmd.append('--arch-only')
+        ds_cmd.append('--only=arch')
     elif not build_arch and build_indep:
-        ds_cmd.append('--indep-only')
+        ds_cmd.append('--only=indep')
+    else:
+        ds_cmd.append('--only=binary')
     if maintainer:
         ds_cmd.append('--maintainer={maintainer}'.format(maintainer=maintainer))
     ds_cmd.append(suite)
