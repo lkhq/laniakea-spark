@@ -97,7 +97,9 @@ def debspawn_build(jlog, dsc, maintainer, suite, affinity, build_arch, build_ind
         if line.startswith('ERROR'):
             if line.startswith('ERROR: The container image for') or \
                line.startswith('ERROR: Build environment setup failed.'):
-                raise Exception("Debspawn failed to run. " + out)
+                # FIXME: This error is not the build's fault!
+                # we should reflect that somehow.
+                return (analysis, out, True, None)
 
     ftbfs = ret != 0
     base, _ = os.path.basename(dsc).rsplit(".", 1)
