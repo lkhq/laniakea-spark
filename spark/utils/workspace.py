@@ -59,7 +59,7 @@ def make_commandfile(job_id, commands):
     f.close()
 
 
-def debspawn_run_commandfile(jlog, suite, arch, build_dir, artifacts_dir, command_script, header=None):
+def debspawn_run_commandfile(jlog, suite, arch, build_dir, artifacts_dir, command_script, header=None, allow_dev_access=False):
     '''
     Execute a command-script file in a debspawn container.
     '''
@@ -72,6 +72,8 @@ def debspawn_run_commandfile(jlog, suite, arch, build_dir, artifacts_dir, comman
         ds_cmd.append('--artifacts-out={}'.format(artifacts_dir))
     if build_dir:
         ds_cmd.append('--build-dir={}'.format(build_dir))
+    if allow_dev_access:
+        ds_cmd.append('--allow={}'.format('full-dev-access'))
 
     if header:
         ds_cmd.append('--header={}'.format(header))
