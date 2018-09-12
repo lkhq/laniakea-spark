@@ -113,9 +113,6 @@ def build_disk_image(jlog, job, jdata):
     commands.append('git clone --depth=2 {0} {1}/imgbuild'.format(shlex.quote(jdata.get('git_url')), wsdir))
     commands.append('cd ./imgbuild')
 
-    # FIXME: hack, please remove me later
-    commands.append('export MIRROR="{}"'.format('https://repo.pureos.net/pureos/'))
-
     # the flavor variable is used to encode the board type as well
     flavor = jdata.get('flavor')
     if flavor:
