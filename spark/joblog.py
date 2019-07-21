@@ -17,10 +17,10 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
-import json
 from io import StringIO
 from contextlib import contextmanager
 import threading
+from spark.utils.misc import to_compact_json
 
 
 class JobLog:
@@ -77,7 +77,7 @@ class JobLog:
         req = dict(self._msg_template) # copy the template
         req['log_excerpt'] = log_excerpt
 
-        self._conn.send_str_noreply(str(json.dumps(req)))
+        self._conn.send_str_noreply(to_compact_json(req))
         self._last_msg_excerpt = log_excerpt
 
 

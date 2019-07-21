@@ -20,6 +20,7 @@
 import os
 import tempfile
 import shutil
+import json
 from contextlib import contextmanager
 from spark.utils.command import safe_run
 
@@ -53,3 +54,15 @@ def tdir():
         yield fp
     finally:
         shutil.rmtree(fp)
+
+
+def to_compact_json(json_object, sort_keys=False):
+    '''
+    Create JSON representation of :json_object in the most
+    compact way possible.
+    '''
+    data = json.dumps(json_object,
+                      ensure_ascii=False,
+                      separators=(',', ':'),
+                      sort_keys=sort_keys)
+    return str(data)

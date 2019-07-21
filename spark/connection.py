@@ -22,6 +22,7 @@ import json
 import zmq
 import zmq.auth
 import logging as log
+from spark.utils.misc import to_compact_json
 
 
 class JobStatus:
@@ -101,7 +102,7 @@ class ServerConnection:
         req['request'] = 'job-{}'.format(status)
         req['uuid'] = job_id
 
-        self._sock.send_string(str(json.dumps(req)))
+        self._sock.send_string(to_compact_json(req))
         try:
             self._sock.poll(RESPONSE_WAIT_TIME)
         except:
@@ -131,7 +132,7 @@ class ServerConnection:
         req['architectures'] = self._conf.supported_architectures
 
         # request job
-        self._sock.send_string(str(json.dumps(req)))
+        self._sock.send_string(to_compact_json(req))
 
         # wait for a reply
         job_reply_msgs = None
