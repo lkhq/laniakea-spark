@@ -81,7 +81,7 @@ def build_iso_image(jlog, job, jdata):
                                           build_dir=None,
                                           artifacts_dir=os.path.abspath('result/'),
                                           command_script=shfname,
-                                          header='ISO image build for {}'.format(flavor))
+                                          header='ISO image build for {} {}'.format(suite_name, flavor))
     if ret != 0:
         return False, None, None
 
