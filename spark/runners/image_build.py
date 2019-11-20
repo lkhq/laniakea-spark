@@ -49,6 +49,9 @@ def build_iso_image(jlog, job, jdata):
     commands.append('git clone --depth=2 {0} {1}/lb'.format(shlex.quote(jdata.get('git_url')), wsdir))
     commands.append('cd ./lb')
 
+    # set suite to build image for
+    commands.append('export SUITE="{}"'.format(shlex.quote(suite_name)))
+
     # flavor env var
     flavor = jdata.get('flavor')
     if flavor:
