@@ -18,6 +18,7 @@
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import shlex
 import logging as log
 from contextlib import contextmanager
 from tempfile import NamedTemporaryFile

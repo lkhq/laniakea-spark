@@ -22,6 +22,8 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
+# flake8: noqa
+
 from firehose.model import Stats
 import firehose.parsers.gcc as fgcc
 
