@@ -52,7 +52,7 @@ def make_commandfile(job_id, commands):
     f = NamedTemporaryFile('w', suffix='.sh', prefix='{}-'.format(job_id))
     f.write('#!/bin/sh\n')
     f.write('set -e\n')
-    f.write('export SPARK_ID="{}"\n'.format(shlex.quote(__appname__, __version__)))
+    f.write('export SPARK_ID="{}"\n'.format(shlex.quote(__appname__ + '-' + __version__)))
     f.write('set -x\n')
     f.write('\n')
     for cmd in commands:
