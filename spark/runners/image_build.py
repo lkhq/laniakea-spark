@@ -129,7 +129,15 @@ def build_disk_image(jlog, job, jdata):
     img_build_cmd = './build-image -d {}'.format(suite_name)
     if board_type:
         img_build_cmd = '{} -b {}'.format(img_build_cmd, board_type)
+
+    # run the "image-build" script if it exists, otherwise assume a Makefile is there
+    # which does the right thing and just run make
+    commands.append('if [ -f "build-image" ]')
+    commands.append('then')
     commands.append(img_build_cmd)
+    commands.append('else')
+    commands.append('make')
+    commands.append('fi')
 
     commands.append('xz *.qcow2')
     commands.append('xz *.img')
