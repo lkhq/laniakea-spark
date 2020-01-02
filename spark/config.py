@@ -58,7 +58,7 @@ class LocalConfig:
         if self._max_jobs < 1:
             raise Exception('The maximum number of jobs can not be < 1.')
 
-        self._client_cert_fname = os.path.join(self.CERTS_BASE_DIR, 'secret', '{0}_private.sec'.format(self.machine_name))
+        self._client_cert_fname = os.path.join(self.CERTS_BASE_DIR, 'secret', '{0}-spark_private.sec'.format(self.machine_name))
         self._server_cert_fname = os.path.join(self.CERTS_BASE_DIR, '{0}_lighthouse-server.pub'.format(self.machine_name))
 
         workspace_root = jdata.get('WorkspaceRoot')
