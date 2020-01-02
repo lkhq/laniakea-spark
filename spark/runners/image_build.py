@@ -110,7 +110,8 @@ def build_disk_image(jlog, job, jdata):
 
     commands.append('apt-get install -yq git ca-certificates xz-utils')
     commands.append('apt-get install -yq vmdb2')
-    commands.append('apt-get install -yq debos')
+    if arch == 'amd64':
+        commands.append('apt-get install -yq debos')
 
     # preamble
     wsdir = '/srv/build/'
