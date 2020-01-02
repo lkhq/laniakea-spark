@@ -40,8 +40,8 @@ def build_iso_image(jlog, job, jdata):
     commands = []
     commands.append('export DEBIAN_FRONTEND=noninteractive')
 
-    commands.append('apt-get install -y git ca-certificates')
-    commands.append('apt-get install -y live-build')
+    commands.append('apt-get install -yq git ca-certificates')
+    commands.append('apt-get install -yq live-build')
 
     # preamble
     wsdir = '/srv/build/'
@@ -96,7 +96,8 @@ def build_iso_image(jlog, job, jdata):
 def build_disk_image(jlog, job, jdata):
     '''
     Build disk images using custom tooling PureOS uses.
-    FIXME: Can this be generatlized using just vmdb2/etc. in future?
+    FIXME: Can this be a bit more generic, possibly using just
+    # one of vmdb2/debos/etc. in future?
     '''
     job_id = jlog.job_id
     suite_name = jdata.get('suite')
@@ -107,8 +108,9 @@ def build_disk_image(jlog, job, jdata):
     commands = []
     commands.append('export DEBIAN_FRONTEND=noninteractive')
 
-    commands.append('apt-get install -y git ca-certificates')
-    commands.append('apt-get install -y vmdebootstrap xz-utils')
+    commands.append('apt-get install -yq git ca-certificates xz-utils')
+    commands.append('apt-get install -yq vmdb2')
+    commands.append('apt-get install -yq debos')
 
     # preamble
     wsdir = '/srv/build/'
