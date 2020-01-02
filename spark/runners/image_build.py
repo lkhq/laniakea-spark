@@ -108,8 +108,8 @@ def build_disk_image(jlog, job, jdata):
     commands = []
     commands.append('export DEBIAN_FRONTEND=noninteractive')
 
-    commands.append('apt-get install -yq git ca-certificates xz-utils')
-    commands.append('apt-get install -yq vmdb2')
+    commands.append('apt-get install -yq git ca-certificates xz-utils debootstrap')
+    commands.append('apt-get install -yq --no-install-recommends vmdb2')
     if arch == 'amd64':
         commands.append('apt-get install -yq debos')
 
