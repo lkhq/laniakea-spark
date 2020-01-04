@@ -142,16 +142,14 @@ def build_disk_image(jlog, job, jdata):
     commands.append('make')
     commands.append('fi')
 
-    commands.append('xz *.qcow2')
-    commands.append('xz *.img')
+    commands.append('xz $(find . -maxdepth 1 -type f \( -name "*.img" -o -name "*.qcow2" \) -print)')
 
-    commands.append('b2sum *.qcow2.xz *.img.xz > checksums.b2sum')
-    commands.append('sha256sum *.qcow2.xz *.img.xz > checksums.sha256sum')
+    commands.append('b2sum $(find . -maxdepth 1 -type f \( -name "*.img.xz" -o -name "*.qcow2.xz" \) -print) > checksums.b2sum')
+    commands.append('sha256sum $(find . -maxdepth 1 -type f \( -name "*.img.xz" -o -name "*.qcow2.xz" \) -print) > checksums.sha256sum')
 
     # save artifacts (move to internal bindmounted directory)
     results_dir = '/srv/artifacts'.format(job_id)
-    commands.append('mv *.qcow2.xz {}/'.format(results_dir))
-    commands.append('mv *.img.xz {}/'.format(results_dir))
+    commands.append('mv $(find . -maxdepth 1 -type f \( -name "*.img.xz" -o -name "*.qcow2.xz" \) -print) {}/'.format(results_dir))
     commands.append('mv -f *.b2sum {}/'.format(results_dir))
     commands.append('mv -f *.sha256sum {}/'.format(results_dir))
 
