@@ -40,7 +40,7 @@ def build_iso_image(jlog, job, jdata):
     commands = []
     commands.append('export DEBIAN_FRONTEND=noninteractive')
 
-    commands.append('apt-get install -yq git ca-certificates')
+    commands.append('apt-get install -yq --no-install-recommends git ca-certificates')
     commands.append('apt-get install -yq live-build')
 
     # preamble
@@ -108,7 +108,8 @@ def build_disk_image(jlog, job, jdata):
     commands = []
     commands.append('export DEBIAN_FRONTEND=noninteractive')
 
-    commands.append('apt-get install -yq git ca-certificates xz-utils debootstrap')
+    commands.append('apt-get install -yq --no-install-recommends git ca-certificates')
+    commands.append('apt-get install -yq xz-utils debootstrap')
     commands.append('apt-get install -yq --no-install-recommends vmdb2')
     if arch == 'amd64':
         commands.append('apt-get install -yq debos')
