@@ -45,7 +45,7 @@ class ServerErrorException(Exception):
 
 
 # maximum amount of time to wait for a server response
-RESPONSE_WAIT_TIME = 10000 # 10sec
+RESPONSE_WAIT_TIME = 15000 # 15sec
 
 
 class ServerConnection:
