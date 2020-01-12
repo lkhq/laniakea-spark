@@ -74,7 +74,7 @@ class JobLog:
         if prefix:
             log_excerpt = prefix + log_excerpt
 
-        req = dict(self._msg_template) # copy the template
+        req = dict(self._msg_template)  # copy the template
         req['log_excerpt'] = log_excerpt
 
         self._conn.send_str_noreply(to_compact_json(req))

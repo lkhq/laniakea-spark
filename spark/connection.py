@@ -102,11 +102,12 @@ class ServerConnection:
         req['request'] = 'job-{}'.format(status)
         req['uuid'] = job_id
 
-        self._sock.send_string(to_compact_json(req))
         try:
-            self._sock.poll(RESPONSE_WAIT_TIME)
-        except:
-            self.__send_attempt_failed()
+            self._sock.send_string(to_compact_json(req))
+            if self._sock.poll(RESPONSE_WAIT_TIME) == zmq.POLLIN:
+                self._sock.recv()  # discard reply
+        except zmq.error.ZMQError as e:
+            self._send_attempt_failed(e)
 
 
     def new_base_request(self):
@@ -136,7 +137,13 @@ class ServerConnection:
 
         # wait for a reply
         job_reply_msgs = None
-        if (poller.poll(RESPONSE_WAIT_TIME)):
+        try:
+            sockev = dict(poller.poll(RESPONSE_WAIT_TIME))
+        except zmq.error.ZMQError as e:
+            self._send_attempt_failed()
+            raise ReplyException('ZMQ error while polling for reply: ' + str(e))
+
+        if sockev.get(self._sock) == zmq.POLLIN:
             job_reply_msgs = self._sock.recv_multipart()
         else:
             self._send_attempt_failed()
@@ -162,17 +169,25 @@ class ServerConnection:
         return job_reply
 
 
-    def _send_attempt_failed(self):
+    def _send_attempt_failed(self, error=None):
         self._send_attempts = self._send_attempts + 1
         if self._send_attempts >= 6:
-            log.error('Send attempts expired, reconnecting...')
+            if error:
+                log.error('Send attempts expired (' + str(error) + '), reconnecting...')
+            else:
+                log.error('Send attempts expired, reconnecting...')
             self.reconnect()
             self._send_attempts = 0
 
 
     def send_str_noreply(self, s):
-        mt = self._sock.send(str(s).encode('utf-8'), copy=False, track=True)
+        if type(s) is str:
+            data = s.encode('utf-8')
+        elif type(s) is not bytes:
+            data = str(s).encode('utf-8')
+
+        mt = self._sock.send(data, copy=False, track=True)
         try:
             mt.wait(4) # wait for 4 seconds for the mesage to be sent
-        except:
-            self._send_attempt_failed()
+        except zmq.error.ZMQError as e:
+            self._send_attempt_failed(e)
