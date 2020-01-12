@@ -45,7 +45,7 @@ def spark_schroot(name, job_id):
             ch.run([
                 'chmod', '-R', '777', wsdir
             ], user='root')
-        except:
+        except:  # noqa: E722
             pass
 
         ch.end()
@@ -61,7 +61,7 @@ def chroot_run_logged(schroot, jlog, cmd, **kwargs):
         if sel.poll(2):
             jlog.write(p.stdout.read())
         else:
-            time.sleep(4) # wait a little for the process to write more output
+            time.sleep(4)  # wait a little for the process to write more output
         if p.poll() is not None:
             if sel.poll(1):
                 jlog.write(p.stdout.read())

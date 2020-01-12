@@ -94,7 +94,6 @@ class LocalConfig:
         if not self._gpg_key_id:
             raise Exception('The essential "GpgKeyID" configuration entry is missing.')
 
-
     def _make_client_uuid(self, machine_name):
         import uuid
 

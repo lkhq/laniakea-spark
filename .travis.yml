@@ -18,5 +18,4 @@ install:
 script:
   - ./setup.py build
   - ./setup.py install --root=/tmp
-  # E722 should not actually be ignored...
-  - flake8 --ignore E501,E303,E261,E302,E221,E722 spark/
+  - flake8 spark/

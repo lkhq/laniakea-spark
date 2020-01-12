@@ -76,7 +76,6 @@ def safe_run(cmd, input=None, expected=0):
     return out, err, ret
 
 
-
 def run_logged(jlog, cmd, return_output=False, **kwargs):
 
     def bytes2str(s):
@@ -98,7 +97,7 @@ def run_logged(jlog, cmd, return_output=False, **kwargs):
             if return_output:
                 outbuf.write(so)
         else:
-            time.sleep(4) # wait a little for the process to write more output
+            time.sleep(4)  # wait a little for the process to write more output
         if p.poll() is not None:
             if sel.poll(1):
                 so = bytes2str(p.stdout.read())

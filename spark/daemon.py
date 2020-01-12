@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2016-2018 Matthias Klumpp <matthias@tenstral.net>
+# Copyright (C) 2016-2020 Matthias Klumpp <matthias@tenstral.net>
 #
 # Licensed under the GNU Lesser General Public License Version 3
 #
@@ -35,7 +35,6 @@ class Daemon:
             log_level = log.INFO
         log.basicConfig(level=log_level, format="[%(levelname)s] %(message)s")
 
-
     def run_worker_process(self, worker_name):
         """
         Set up connection for a new worker process and launch it.
@@ -53,7 +52,6 @@ class Daemon:
 
         w = Worker(self._conf, conn)
         w.run()
-
 
     def run(self):
         # check Python platform version - 3.5 works while 3.6 or higher is properly tested

@@ -38,7 +38,6 @@ class Worker:
         self._conn = lighthouse_connection
         self._conf = conf
 
-
     def _run_job(self, job):
         '''
         Run a job. Return True if the job was handled in some
@@ -83,7 +82,7 @@ class Worker:
             with job_log(self._conn, job_id, log_fname) as jlog:
                 try:
                     success, files, changes = run(jlog, job, job.get('data'))
-                except:
+                except:  # noqa: E722
                     import traceback
                     tb = traceback.format_exc()
                     jlog.write(tb)
@@ -140,7 +139,6 @@ class Worker:
 
         return True
 
-
     def _request_job(self):
         '''
         Request a new job.
@@ -170,7 +168,6 @@ class Worker:
             log.warning('Received job of type {0}::{1} which we can not handle.'.format(job_module, job_kind))
             self._conn.send_job_status(job_id, JobStatus.REJECTED)
             return False
-
 
     def run(self):
         while True:

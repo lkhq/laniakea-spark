@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2017-2018 Matthias Klumpp <matthias@tenstral.net>
+# Copyright (C) 2017-2020 Matthias Klumpp <matthias@tenstral.net>
 #
 # Licensed under the GNU Lesser General Public License Version 3
 #
@@ -45,7 +45,7 @@ class ServerErrorException(Exception):
 
 
 # maximum amount of time to wait for a server response
-RESPONSE_WAIT_TIME = 15000 # 15sec
+RESPONSE_WAIT_TIME = 15000  # 15sec
 
 
 class ServerConnection:
@@ -57,7 +57,6 @@ class ServerConnection:
         self._zctx = ctx
 
         self._send_attempts = 0
-
 
     def connect(self):
         """
@@ -86,7 +85,6 @@ class ServerConnection:
         # connect
         self._sock.connect(self._conf.lighthouse_server)
 
-
     def reconnect(self):
         """
         Re-establish connection. The lazy answer in case we got
@@ -94,7 +92,6 @@ class ServerConnection:
         """
         self._sock.close()
         self.connect()
-
 
     def send_job_status(self, job_id, status):
         req = self.new_base_request()
@@ -109,13 +106,11 @@ class ServerConnection:
         except zmq.error.ZMQError as e:
             self._send_attempt_failed(e)
 
-
     def new_base_request(self):
         """
         Get a copy of the base request template.
         """
         return dict(self._base_req)
-
 
     def request_job(self):
         """
@@ -124,7 +119,6 @@ class ServerConnection:
 
         poller = zmq.Poller()
         poller.register(self._sock, zmq.POLLIN)
-
 
         # construct job request
         req = dict(self._base_req)
@@ -168,7 +162,6 @@ class ServerConnection:
 
         return job_reply
 
-
     def _send_attempt_failed(self, error=None):
         self._send_attempts = self._send_attempts + 1
         if self._send_attempts >= 6:
@@ -179,7 +172,6 @@ class ServerConnection:
             self.reconnect()
             self._send_attempts = 0
 
-
     def send_str_noreply(self, s):
         if type(s) is str:
             data = s.encode('utf-8')
@@ -188,6 +180,6 @@ class ServerConnection:
 
         mt = self._sock.send(data, copy=False, track=True)
         try:
-            mt.wait(4) # wait for 4 seconds for the mesage to be sent
+            mt.wait(4)  # wait for 4 seconds for the mesage to be sent
         except zmq.error.ZMQError as e:
             self._send_attempt_failed(e)
