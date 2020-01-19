@@ -80,6 +80,7 @@ def debspawn_build(jlog, dsc, maintainer, suite, affinity, build_arch, build_ind
 
     ds_cmd = ['debspawn',
               'build',
+              '--no-buildlog',
               '--arch={affinity}'.format(affinity=affinity),
               '--results-dir={cwd}'.format(cwd=os.getcwd())]
 
