@@ -18,11 +18,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
 import shlex
 import subprocess
-import select
-import time
 from io import StringIO
 
 
@@ -83,28 +80,20 @@ def run_logged(jlog, cmd, return_output=False, **kwargs):
             s = str(s, 'utf-8', errors='replace')
         return s
 
-    env = os.environ.copy()
-    env['PYTHONUNBUFFERED'] = 'true'
-    p = subprocess.Popen(cmd, **kwargs, bufsize=0, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+    p = subprocess.Popen(cmd, **kwargs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
 
+    # capture live output and send it to all places that are interested in
+    # logging it (except for our stdout).
     outbuf = StringIO()
-    sel = select.poll()
-    sel.register(p.stdout, select.POLLIN)
     while True:
-        if sel.poll(2):
-            so = bytes2str(p.stdout.read())
-            jlog.write(so)
-            if return_output:
-                outbuf.write(so)
-        else:
-            time.sleep(4)  # wait a little for the process to write more output
+        line_b = p.stdout.readline()
         if p.poll() is not None:
-            if sel.poll(1):
-                so = bytes2str(p.stdout.read())
-                jlog.write(so)
-                if return_output:
-                    outbuf.write(so)
             break
+        line_s = str(line_b, 'utf-8', 'replace')
+        jlog.write(line_s)
+        if return_output:
+            outbuf.write(line_s)
+
     ret = p.returncode
     if ret:
         jlog.write('Command {0} failed with error code {1}'.format(cmd, ret))
