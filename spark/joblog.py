@@ -67,6 +67,7 @@ class JobLog:
         log_excerpt = self._buf.getvalue()
         self._buf = StringIO()
 
+        self._last_msg_excerpt = log_excerpt
         if prefix:
             log_excerpt = prefix + log_excerpt
 
@@ -74,7 +75,6 @@ class JobLog:
         req['log_excerpt'] = log_excerpt
 
         self._conn.send_str_noreply(to_compact_json(req))
-        self._last_msg_excerpt = log_excerpt
 
     def close(self):
         self._closed = True
