@@ -56,27 +56,26 @@ class JobLog:
 
     def _send_timed(self):
         if self._have_output:
-            self._send_buffer(self._last_msg_excerpt)
+            self._send_buffer()
         if not self._closed:
             threading.Timer(30.0, self._send_timed).start()
 
-    def _send_buffer(self, prefix=None):
+    def _send_buffer(self):
         if not self._have_output:
             return
         self._have_output = False
         log_excerpt = self._buf.getvalue()
         self._buf = StringIO()
 
-        self._last_msg_excerpt = log_excerpt
-        if prefix:
-            log_excerpt = prefix + log_excerpt
-
         req = dict(self._msg_template)  # copy the template
         req['log_excerpt'] = log_excerpt
 
         self._conn.send_str_noreply(to_compact_json(req))
+        self._last_msg_excerpt = log_excerpt
 
     def close(self):
+        if self._have_output:
+            self._send_buffer()
         self._closed = True
         self._file.close()
 
