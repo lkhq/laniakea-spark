@@ -151,7 +151,7 @@ class Worker:
             log.warning(str(e))
             return False
         except Exception as e:
-            log.error(str(e))
+            log.error('Error when requesting job: {}'.format(str(e)))
             return False
 
         if not job_reply:

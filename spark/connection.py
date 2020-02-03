@@ -156,7 +156,11 @@ class ServerConnection:
             log.debug('No new jobs.')
             return None
 
-        server_error = job_reply.get('error')
+        try:
+            server_error = job_reply.get('error')
+        except Exception:
+            raise ServerErrorException('Received unexpected server reply: {}'.format(str(job_reply)))
+
         if server_error:
             raise ServerErrorException('Received error message from server: {}'.format(server_error))
 
