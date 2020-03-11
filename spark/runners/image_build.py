@@ -31,7 +31,6 @@ def build_iso_image(jlog, job, jdata):
     '''
     Build an ISO image using live-build
     '''
-    job_id = jlog.job_id
     suite_name = jdata.get('suite')
     arch = job.get('architecture')
 
@@ -65,7 +64,7 @@ def build_iso_image(jlog, job, jdata):
     commands.append('sha256sum *.iso *.contents *.zsync *.packages > checksums.sha256sum')
 
     # save artifacts (move to internal bindmounted directory)
-    results_dir = '/srv/artifacts'.format(job_id)
+    results_dir = '/srv/artifacts'
     commands.append('mv *.iso {}/'.format(results_dir))
     commands.append('mv -f *.zsync {}/'.format(results_dir))
     commands.append('mv -f *.contents {}/'.format(results_dir))
@@ -79,7 +78,7 @@ def build_iso_image(jlog, job, jdata):
                                           suite_name,
                                           arch,
                                           build_dir=None,
-                                          artifacts_dir=os.path.abspath('result/'),
+                                          artifacts_dir=os.path.abspath('artifacts/'),
                                           command_script=shfname,
                                           header='ISO image build for {} {}'.format(suite_name, flavor))
     if ret != 0:
@@ -87,7 +86,7 @@ def build_iso_image(jlog, job, jdata):
 
     # collect list of files to upload
     files = []
-    for f in glob.glob('result/*'):
+    for f in glob.glob('artifacts/*'):
         files.append(os.path.abspath(f))
 
     return True, files, None
@@ -99,7 +98,6 @@ def build_disk_image(jlog, job, jdata):
     FIXME: Can this be a bit more generic, possibly using just
     # one of vmdb2/debos/etc. in future?
     '''
-    job_id = jlog.job_id
     suite_name = jdata.get('suite')
     arch = job.get('architecture')
 
@@ -150,7 +148,7 @@ def build_disk_image(jlog, job, jdata):
     commands.append('sha256sum $compressed_images > {}-checksums.sha256sum'.format(flavor.replace(' ', '')))
 
     # save artifacts (move to internal bindmounted directory)
-    results_dir = '/srv/artifacts'.format(job_id)
+    results_dir = '/srv/artifacts'
     commands.append('mv $compressed_images {}/'.format(results_dir))
     commands.append('mv -f *.b2sum {}/'.format(results_dir))
     commands.append('mv -f *.sha256sum {}/'.format(results_dir))
@@ -160,7 +158,7 @@ def build_disk_image(jlog, job, jdata):
                                           suite_name,
                                           arch,
                                           build_dir=None,
-                                          artifacts_dir=os.path.abspath('result/'),
+                                          artifacts_dir=os.path.abspath('artifacts/'),
                                           command_script=shfname,
                                           header='Disk image build for {}'.format(flavor),
                                           allow_dev_access=True)
@@ -169,7 +167,7 @@ def build_disk_image(jlog, job, jdata):
 
     # collect list of files to upload
     files = []
-    for f in glob.glob('result/*'):
+    for f in glob.glob('artifacts/*'):
         files.append(os.path.abspath(f))
 
     return True, files, None

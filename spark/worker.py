@@ -113,8 +113,10 @@ class Worker:
                 # collect list of additional files to upload
                 files.append(log_fname)
                 for f in files:
-                    shutil.copyfile(f, os.path.basename(f))
-                    dud.add_file(os.path.basename(f))
+                    fbase = os.path.basename(f)
+                    if not os.path.isfile(fbase):
+                        shutil.copyfile(f, fbase)
+                    dud.add_file(fbase)
 
                 dudf = "{}.dud".format(job_id)
                 with open(dudf, 'wb') as fd:

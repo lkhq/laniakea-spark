@@ -32,9 +32,6 @@ def lkworkspace(wsdir):
     artifacts_dir = os.path.join(wsdir, 'artifacts')
     if not os.path.exists(artifacts_dir):
         os.makedirs(artifacts_dir)
-    results_dir = os.path.join(wsdir, 'result')
-    if not os.path.exists(results_dir):
-        os.makedirs(results_dir)
 
     ncwd = os.getcwd()
     try:
