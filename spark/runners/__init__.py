@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2017-2018 Matthias Klumpp <matthias@tenstral.net>
+# Copyright (C) 2017-2020 Matthias Klumpp <matthias@tenstral.net>
 #
 # Licensed under the GNU Lesser General Public License Version 3
 #
@@ -24,8 +24,8 @@ import importlib
 Determine which runner is responsible for which job type.
 '''
 PLUGINS = {
-    "package-build": "spark.runners.debspawn",
-    "os-image-build": "spark.runners.image_build",
+    'package-build': 'spark.runners.debspawn',
+    'os-image-build': 'spark.runners.image_build',
 }
 
 

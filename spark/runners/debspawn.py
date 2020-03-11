@@ -34,7 +34,7 @@ from spark.utils.firehose import create_firehose
 from spark.utils.command import run_logged, run_command, safe_run
 
 
-STATS = re.compile("Build needed (?P<time>.*), (?P<space>.*) dis(c|k) space")
+STATS = re.compile('Build needed (?P<time>.*), (?P<space>.*) dis(c|k) space')
 
 
 def parse_debspawn_log(log, sut):
@@ -42,23 +42,23 @@ def parse_debspawn_log(log, sut):
     stats = None
 
     for line in log.splitlines():
-        flag = "Toolchain package versions: "
+        flag = 'Toolchain package versions: '
         stat = STATS.match(line)
         if stat:
             info = stat.groupdict()
-            hours, minutes, seconds = [int(x) for x in info['time'].split(":")]
+            hours, minutes, seconds = [int(x) for x in info['time'].split(':')]
             timed = timedelta(hours=hours, minutes=minutes, seconds=seconds)
             stats = Stats(timed.total_seconds())
         if line.startswith(flag):
             line = line[len(flag):].strip()
-            packages = line.split(" ")
+            packages = line.split(' ')
             versions = {}
             for package in packages:
-                if "_" not in package:
+                if '_' not in package:
                     continue
-                b, bv = package.split("_", 1)
+                b, bv = package.split('_', 1)
                 versions[b] = bv
-            vs = list(filter(lambda x: x.startswith("gcc"), versions))
+            vs = list(filter(lambda x: x.startswith('gcc'), versions))
             if vs == []:
                 continue
             vs = vs[0]
@@ -76,7 +76,7 @@ def parse_debspawn_log(log, sut):
 
 def debspawn_build(jlog, dsc, maintainer, suite, affinity, build_arch, build_indep, analysis):
     if not dsc.endswith('.dsc'):
-        raise ValueError("WTF")
+        raise ValueError('WTF')
 
     ds_cmd = ['debspawn',
               'build',
@@ -105,30 +105,30 @@ def debspawn_build(jlog, dsc, maintainer, suite, affinity, build_arch, build_ind
                 return (analysis, out, True, None)
 
     ftbfs = ret != 0
-    base, _ = os.path.basename(dsc).rsplit(".", 1)
-    changes = glob.glob("{base}_*.changes".format(base=base))
+    base, _ = os.path.basename(dsc).rsplit('.', 1)
+    changes = glob.glob('{base}_*.changes'.format(base=base))
 
     return (analysis, out, ftbfs, changes)
 
 
 def checkout(dsc_url):
-    safe_run(["dget", "-u", "-d", dsc_url])
+    safe_run(['dget', '-u', '-d', dsc_url])
     return os.path.basename(dsc_url)
 
 
 def get_version():
     out, err, ret = run_command([
-        "debspawn", '--version'
+        'debspawn', '--version'
     ])
     if ret != 0:
-        raise Exception("debspawn is not installed")
+        raise Exception('debspawn is not installed')
     return ('debspawn', out.strip())
 
 
 def run(jlog, job, jdata):
     arch_name = job['architecture']
-    build_arch = arch_name != "all"
-    build_indep = arch_name == "all" or jdata['do_indep']
+    build_arch = arch_name != 'all'
+    build_indep = arch_name == 'all' or jdata['do_indep']
     maintainer = jdata.get('maintainer')
 
     firehose = create_firehose('source',
@@ -144,16 +144,16 @@ def run(jlog, job, jdata):
     if not changes and not ftbfs:
         print(out)
         print(changes)
-        print(list(glob.glob("*")))
-        raise Exception("Um. No changes but no FTBFS.")
+        print(list(glob.glob('*')))
+        raise Exception('Um. No changes but no FTBFS.')
 
     if not ftbfs:
         changes = os.path.join(os.getcwd(), changes[0])
     else:
         changes = None
 
-    _, _, v = jdata['package_version'].rpartition(":")
-    prefix = "%s_%s_%s.%s" % (jdata['package_name'], v, arch_name, job['uuid'])
+    _, _, v = jdata['package_version'].rpartition(':')
+    prefix = '%s_%s_%s.%s' % (jdata['package_name'], v, arch_name, job['uuid'])
     firehose_fname = '{prefix}.firehose.xml'.format(prefix=prefix)
 
     files = list()
