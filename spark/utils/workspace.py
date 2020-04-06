@@ -73,7 +73,7 @@ def debspawn_run_commandfile(jlog, suite, arch, build_dir, artifacts_dir, comman
     if build_dir:
         ds_cmd.append('--build-dir={}'.format(build_dir))
     if allow_dev_access:
-        ds_cmd.append('--allow={}'.format('full-dev-access'))
+        ds_cmd.append('--allow={}'.format('full-dev'))
 
     if header:
         ds_cmd.append('--header={}'.format(header))
