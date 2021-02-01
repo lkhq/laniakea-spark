@@ -59,10 +59,19 @@ class Worker:
         artifacts_dir = os.path.join(workspace, 'artifacts')
 
         # set up default workspace directories
-        if not os.path.exists(artifacts_dir):
-            os.makedirs(artifacts_dir)
-        if not os.path.exists(self._conf.job_log_dir):
-            os.makedirs(self._conf.job_log_dir)
+        try:
+            if not os.path.exists(artifacts_dir):
+                os.makedirs(artifacts_dir)
+            if not os.path.exists(self._conf.job_log_dir):
+                os.makedirs(self._conf.job_log_dir)
+        except OSError as e:
+            self._conn.send_job_status(job_id, JobStatus.REJECTED)
+            log.error('Failed to create working directory for \'{}\': {} (job forwarded)'.format(job_id, str(e)))
+            try:
+                shutil.rmtree(workspace)
+            except Exception:
+                pass  # we failed to create the workspace, so failing to clean it up is not an error
+            return False
 
         # set the logfile and run the job
         log.info('Running job \'{}\''.format(job_id))
@@ -81,7 +90,7 @@ class Worker:
         with lkworkspace(workspace):
             with job_log(self._conn, job_id, log_fname) as jlog:
                 try:
-                    success, files, changes = run(jlog, job, job.get('data'))
+                    build_success, files, changes = run(jlog, job, job.get('data'))
                 except:  # noqa: E722
                     import traceback
                     tb = traceback.format_exc()
@@ -108,7 +117,7 @@ class Worker:
                 dud['Date'] = formatdate()
                 dud['Architecture'] = job_arch
                 dud['X-Spark-Job'] = str(job_id)
-                dud['X-Spark-Success'] = 'Yes' if success else 'No'
+                dud['X-Spark-Success'] = 'Yes' if build_success else 'No'
 
                 # collect list of additional files to upload
                 files.append(log_fname)
@@ -123,6 +132,7 @@ class Worker:
                     dud.dump(fd=fd)
 
                 # send the result to the remote server
+                success = build_success
                 try:
                     if changes:
                         upload(changes, self._conf.gpg_key_id, self._conf.dput_host)
