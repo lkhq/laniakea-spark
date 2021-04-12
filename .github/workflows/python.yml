@@ -22,9 +22,6 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: Upgrade
-      run: sudo apt-get update && sudo apt-get full-upgrade
-      
     - name: Install system prerequisites
       run: sudo apt-get install -yq debspawn
 
@@ -33,13 +30,13 @@ jobs:
         python -m pip install --upgrade pip
         pip install flake8 pytest pylint mypy
         pip install -r requirements.txt
-        
+
     - name: Build & Install
       run: |
         ./setup.py build
         ./setup.py install --root=/tmp
         rm -rf build/
-          
+
     - name: Lint (flake8)
       run: |
         python -m flake8 ./ --statistics
