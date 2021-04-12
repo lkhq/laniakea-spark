@@ -21,7 +21,7 @@ import os
 import glob
 import shlex
 from spark.utils.workspace import make_commandfile, debspawn_run_commandfile
-from spark.utils.command import safe_run
+from spark.utils.command import safe_run, run_logged
 
 
 def get_version():
