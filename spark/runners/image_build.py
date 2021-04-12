@@ -44,6 +44,9 @@ def build_image(jlog, host_arch: str, job, jdata):
               '--depth=1',
               jdata.get('git_url'),
               'ib'])
+    run_logged(jlog,
+               ['git', 'log', '--pretty=oneline', '-1'],
+               cwd=os.path.abspath('ib'))
 
     # test if we have a prepare script and something to cache
     init_script = os.path.join('ib', 'prepare.sh')
@@ -64,6 +67,7 @@ def build_image(jlog, host_arch: str, job, jdata):
     commands.append('export IB_ENVIRONMENT="{}"'.format(shlex.quote(env_name)))
     commands.append('export IB_IMAGE_STYLE="{}"'.format(shlex.quote(image_style)))
     commands.append('export IB_TARGET_ARCH="{}"'.format(shlex.quote(build_arch)))
+    commands.append('systemd-machine-id-setup')
     commands.append('cd /srv/build')
     commands.append('exec ./build.sh')
 
