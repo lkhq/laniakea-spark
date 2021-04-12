@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2017-2018 Matthias Klumpp <matthias@tenstral.net>
+# Copyright (C) 2017-2021 Matthias Klumpp <matthias@tenstral.net>
 #
 # Licensed under the GNU Lesser General Public License Version 3
 #
@@ -21,147 +21,68 @@ import os
 import glob
 import shlex
 from spark.utils.workspace import make_commandfile, debspawn_run_commandfile
+from spark.utils.command import safe_run
 
 
 def get_version():
     return ('imagebuild', '0.1')
 
 
-def build_iso_image(jlog, job, jdata):
+def build_image(jlog, host_arch: str, job, jdata):
     '''
-    Build an ISO image using live-build
+    Build an image using the provided recipe (usually utilizing debos)
     '''
+    distro_name = jdata.get('distribution')
     suite_name = jdata.get('suite')
-    arch = job.get('architecture')
+    build_arch = jdata.get('architecture')
+    image_format = jdata.get('image_format', 'iso')
+    env_name = jdata.get('environment')
+    image_style = jdata.get('style')
+
+    # clone the image build recipe repository
+    safe_run(['git', 'clone',
+              '--depth=1',
+              jdata.get('git_url'),
+              'ib'])
+
+    # test if we have a prepare script and something to cache
+    init_script = os.path.join('ib', 'prepare.sh')
+    init_commands = []
+    cache_key = None
+    if os.path.isfile(init_script):
+        cache_key = 'mkimage-{}-{}-{}'.format(image_format, env_name, image_style)
+        init_commands.append('export DEBIAN_FRONTEND=noninteractive')
+        init_commands.append('cd /srv/build')
+        init_commands.append('exec ./prepare.sh')
 
     # construct build recipe
-    # prerequisites
+    if not os.path.isfile(os.path.join('ib', 'build.sh')):
+        raise Exception('No "build.sh" script found to build the image')
     commands = []
     commands.append('export DEBIAN_FRONTEND=noninteractive')
+    commands.append('export IB_SUITE="{}"'.format(shlex.quote(suite_name)))
+    commands.append('export IB_ENVIRONMENT="{}"'.format(shlex.quote(env_name)))
+    commands.append('export IB_IMAGE_STYLE="{}"'.format(shlex.quote(image_style)))
+    commands.append('export IB_TARGET_ARCH="{}"'.format(shlex.quote(build_arch)))
+    commands.append('cd /srv/build')
+    commands.append('exec ./build.sh')
 
-    commands.append('apt-get install -yq --no-install-recommends git ca-certificates')
-    commands.append('apt-get install -yq live-build')
-
-    # preamble
-    wsdir = '/srv/build/'
-    commands.append('cd {}'.format(wsdir))
-    commands.append('git clone --depth=2 {0} {1}/lb'.format(shlex.quote(jdata.get('git_url')), wsdir))
-    commands.append('cd ./lb')
-
-    # set suite to build image for
-    commands.append('export SUITE="{}"'.format(shlex.quote(suite_name)))
-
-    # flavor env var
-    flavor = jdata.get('flavor')
-    if flavor:
-        commands.append('export FLAVOR="{}"'.format(shlex.quote(flavor)))
-
-    # the actual build commands
-    commands.append('lb config')
-    commands.append('lb build')
-
-    commands.append('b2sum *.iso *.contents *.zsync *.packages > checksums.b2sum')
-    commands.append('sha256sum *.iso *.contents *.zsync *.packages > checksums.sha256sum')
-
-    # save artifacts (move to internal bindmounted directory)
-    results_dir = '/srv/artifacts'
-    commands.append('mv *.iso {}/'.format(results_dir))
-    commands.append('mv -f *.zsync {}/'.format(results_dir))
-    commands.append('mv -f *.contents {}/'.format(results_dir))
-    commands.append('mv -f *.files {}/'.format(results_dir))
-    commands.append('mv -f *.packages {}/'.format(results_dir))
-    commands.append('mv -f *.b2sum {}/'.format(results_dir))
-    commands.append('mv -f *.sha256sum {}/'.format(results_dir))
-
-    with make_commandfile(jlog.job_id, commands) as shfname:
-        ret, _ = debspawn_run_commandfile(jlog,
-                                          suite_name,
-                                          arch,
-                                          build_dir=None,
-                                          artifacts_dir=os.path.abspath('artifacts/'),
-                                          command_script=shfname,
-                                          header='ISO image build for {} {}'.format(suite_name, flavor))
-    if ret != 0:
-        return False, None, None
-
-    # collect list of files to upload
-    files = []
-    for f in glob.glob('artifacts/*'):
-        files.append(os.path.abspath(f))
-
-    return True, files, None
-
-
-def build_disk_image(jlog, job, jdata):
-    '''
-    Build disk images using custom tooling PureOS uses.
-    FIXME: Can this be a bit more generic, possibly using just
-    # one of vmdb2/debos/etc. in future?
-    '''
-    suite_name = jdata.get('suite')
-    arch = job.get('architecture')
-
-    # construct build recipe
-    # prerequisites
-    commands = []
-    commands.append('export DEBIAN_FRONTEND=noninteractive')
-
-    commands.append('apt-get install -yq --no-install-recommends git ca-certificates')
-    commands.append('apt-get install -yq xz-utils debootstrap')
-    commands.append('apt-get install -yq --no-install-recommends vmdb2')
-    if arch == 'amd64':
-        commands.append('apt-get install -yq debos')
-
-    # preamble
-    wsdir = '/srv/build/'
-    commands.append('cd {}'.format(wsdir))
-    commands.append('git clone --depth=2 {0} {1}/imgbuild'.format(shlex.quote(jdata.get('git_url')), wsdir))
-    commands.append('cd ./imgbuild')
-
-    # the flavor variable is used to encode the board type as well
-    flavor = jdata.get('flavor')
-    if flavor:
-        commands.append('export FLAVOR="{}"'.format(shlex.quote(flavor)))
-    parts = flavor.split('-', 2)
-    board_type = None
-    if len(parts) >= 3:
-        board_type = parts[-1]
-
-    # the actual build commands
-    img_build_cmd = './build-image -d {}'.format(suite_name)
-    if board_type:
-        img_build_cmd = '{} -b {}'.format(img_build_cmd, board_type)
-
-    # run the "image-build" script if it exists, otherwise assume a Makefile is there
-    # which does the right thing and just run make
-    commands.append('if [ -f "build-image" ]')
-    commands.append('then')
-    commands.append(img_build_cmd)
-    commands.append('else')
-    commands.append('make')
-    commands.append('fi')
-
-    commands.append('xz $(find . -maxdepth 1 -type f \\( -name "*.img" -o -name "*.qcow2" \\) -print)')
-
-    commands.append('compressed_images=$(find . -maxdepth 1 -type f \\( -name "*.img.xz" -o -name "*.qcow2.xz" \\) -print)')
-    commands.append('b2sum $compressed_images > {}-checksums.b2sum'.format(flavor.replace(' ', '')))
-    commands.append('sha256sum $compressed_images > {}-checksums.sha256sum'.format(flavor.replace(' ', '')))
-
-    # save artifacts (move to internal bindmounted directory)
-    results_dir = '/srv/artifacts'
-    commands.append('mv $compressed_images {}/'.format(results_dir))
-    commands.append('mv -f *.b2sum {}/'.format(results_dir))
-    commands.append('mv -f *.sha256sum {}/'.format(results_dir))
-
-    with make_commandfile(jlog.job_id, commands) as shfname:
-        ret, _ = debspawn_run_commandfile(jlog,
-                                          suite_name,
-                                          arch,
-                                          build_dir=None,
-                                          artifacts_dir=os.path.abspath('artifacts/'),
-                                          command_script=shfname,
-                                          header='Disk image build for {}'.format(flavor),
-                                          allow_dev_access=True)
+    with make_commandfile(jlog.job_id, init_commands) as shi_fname:
+        with make_commandfile(jlog.job_id, commands) as shc_fname:
+            ret, _ = debspawn_run_commandfile(jlog,
+                                              suite_name,
+                                              host_arch,
+                                              build_dir=os.path.abspath('ib'),
+                                              artifacts_dir=os.path.abspath('artifacts'),
+                                              init_script=shi_fname if init_commands else None,
+                                              command_script=shc_fname,
+                                              header='{} {} image build for {} {} [{}]'.format(distro_name,
+                                                                                               image_format.upper(),
+                                                                                               suite_name,
+                                                                                               env_name,
+                                                                                               image_style),
+                                              allow_kvm=True,
+                                              cache_key=cache_key)
     if ret != 0:
         return False, None, None
 
@@ -176,15 +97,9 @@ def build_disk_image(jlog, job, jdata):
 def run(jlog, job, jdata):
     suite_name = jdata.get('suite')
     arch = job.get('architecture')
-    image_kind = jdata.get('image_kind')
     if not suite_name:
         return False, None, None
     if not arch:
         return False, None, None
 
-    if image_kind == 'iso':
-        return build_iso_image(jlog, job, jdata)
-    elif image_kind == 'img':
-        return build_disk_image(jlog, job, jdata)
-
-    return False, None, None
+    return build_image(jlog, arch, job, jdata)

@@ -20,6 +20,7 @@
 import os
 import shlex
 import logging as log
+from typing import Optional
 from contextlib import contextmanager
 from tempfile import NamedTemporaryFile
 from spark.utils.command import run_logged
@@ -59,9 +60,11 @@ def make_commandfile(job_id, commands):
     f.close()
 
 
-def debspawn_run_commandfile(jlog, suite, arch, build_dir, artifacts_dir, command_script, header=None, allow_dev_access=False):
+def debspawn_run_commandfile(jlog, suite: str, arch: str, *,
+                             build_dir: str, artifacts_dir: str, init_script: Optional[str] = None,
+                             command_script: str, header=None, allow_kvm=False, cache_key: Optional[str] = None):
     '''
-    Execute a command-script file in a debspawn container.
+    Execute a command-script file in a debspawn container with optional initial environment caching.
     '''
 
     ds_cmd = ['debspawn',
@@ -69,11 +72,15 @@ def debspawn_run_commandfile(jlog, suite, arch, build_dir, artifacts_dir, comman
               '--external-command',
               '--arch={}'.format(arch)]
     if artifacts_dir:
-        ds_cmd.append('--artifacts-out={}'.format(artifacts_dir))
+        ds_cmd.extend(['--artifacts-out', artifacts_dir])
     if build_dir:
-        ds_cmd.append('--build-dir={}'.format(build_dir))
-    if allow_dev_access:
-        ds_cmd.append('--allow={}'.format('full-dev'))
+        ds_cmd.extend(['--build-dir', build_dir])
+    if allow_kvm:
+        ds_cmd.append('--allow={}'.format('kvm'))
+    if cache_key:
+        ds_cmd.extend(['--cachekey', '{}-{}'.format(suite, cache_key)])
+    if init_script:
+        ds_cmd.extend(['--init-command', init_script])
 
     if header:
         ds_cmd.append('--header={}'.format(header))
