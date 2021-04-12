@@ -15,15 +15,22 @@ scripts = {
     ],
 }
 
-data_files = [('/etc/schroot/spark/',
-                 ['data/schroot/copyfiles',
-                  'data/schroot/fstab',
-                  'data/schroot/nssdatabases']),
-              ('/var/lib/lkspark/',
-                 ['data/ws/README'])
-             ]
+data_files = [
+    ('/etc/schroot/spark/',
+     ['data/schroot/copyfiles',
+      'data/schroot/fstab',
+      'data/schroot/nssdatabases']),
+    ('/var/lib/lkspark/',
+     ['data/ws/README'])
+]
 
 long_description = ""
+
+install_requires = [
+    'pyzmq>=16',
+    'python-debian>=0.1.28',
+    'firehose>=0.5'
+]
 
 setup(
     name=__appname__,
@@ -39,4 +46,5 @@ setup(
     url="https://lkorigin.github.io/",
     platforms=['any'],
     entry_points=scripts,
+    install_requires=install_requires,
 )
