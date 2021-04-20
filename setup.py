@@ -34,12 +34,15 @@ setup(
     scripts=[],
     packages=packages,
     data_files=data_files,
+
     author="Matthias Klumpp",
     author_email="matthias@tenstral.net",
     long_description=long_description,
     description='Job runner for Laniakea',
     license="LGPL-3.0+",
-    url="https://lkorigin.github.io/",
+    url="https://laniakea-hq.rtfd.io",
+
+    python_requires='>=3.9',
     platforms=['any'],
     entry_points=scripts,
     install_requires=install_requires,
