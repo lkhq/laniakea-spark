@@ -86,12 +86,12 @@ class Worker:
 
         self._conn.send_job_status(job_id, JobStatus.ACCEPTED)
 
-        run, version = load_module(runner_name)
+        run, _ = load_module(runner_name)
         with lkworkspace(workspace):
             with job_log(self._conn, job_id, log_fname) as jlog:
                 try:
                     build_success, files, changes = run(jlog, job, job.get('data'))
-                except:  # noqa: E722
+                except:  # noqa: E722 pylint: disable=bare-except
                     import traceback
                     tb = traceback.format_exc()
                     jlog.write(tb)

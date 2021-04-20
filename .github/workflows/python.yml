@@ -44,9 +44,9 @@ jobs:
       run: |
         python -m flake8 ./ --statistics
 
-    #- name: Lint (pylint)
-    #  run: |
-    #    python -m pylint -f colorized ./spark/
+    - name: Lint (pylint)
+      run: |
+        python -m pylint -f colorized ./spark/
 
     - name: Lint (mypy)
       run: |

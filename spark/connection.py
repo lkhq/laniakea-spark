@@ -108,7 +108,7 @@ class ServerConnection:
                 sockev = dict(self._poller.poll(RESPONSE_WAIT_TIME))
             except zmq.error.ZMQError as e:
                 self._send_attempt_failed()
-                raise ReplyException('ZMQ error while waiting for reply: ' + str(e))
+                raise ReplyException('ZMQ error while waiting for reply: ' + str(e)) from e
             if sockev.get(self._sock) == zmq.POLLIN:
                 self._sock.recv()  # discard reply
         except zmq.error.ZMQError as e:
@@ -140,7 +140,7 @@ class ServerConnection:
             sockev = dict(self._poller.poll(RESPONSE_WAIT_TIME))
         except zmq.error.ZMQError as e:
             self._send_attempt_failed()
-            raise ReplyException('ZMQ error while polling for reply: ' + str(e))
+            raise ReplyException('ZMQ error while polling for reply: ' + str(e)) from e
 
         if sockev.get(self._sock) == zmq.POLLIN:
             job_reply_msgs = self._sock.recv_multipart()
@@ -156,15 +156,15 @@ class ServerConnection:
         try:
             job_reply = json.loads(str(job_reply_raw, 'utf-8'))
         except Exception as e:
-            raise MessageException('Unable to decode server reply ({0}): {1}'.format(job_reply_raw, str(e)))
+            raise MessageException('Unable to decode server reply ({0}): {1}'.format(job_reply_raw, str(e))) from e
         if not job_reply:
             log.debug('No new jobs.')
             return None
 
         try:
             server_error = job_reply.get('error')
-        except Exception:
-            raise ServerErrorException('Received unexpected server reply: {}'.format(str(job_reply)))
+        except Exception as e:
+            raise ServerErrorException('Received unexpected server reply: {}'.format(str(job_reply))) from e
 
         if server_error:
             raise ServerErrorException('Received error message from server: {}'.format(server_error))
@@ -175,7 +175,7 @@ class ServerConnection:
         self._send_attempts = self._send_attempts + 1
         if self._send_attempts >= 6:
             if error:
-                log.error('Send attempts expired (' + str(error) + '), reconnecting...')
+                log.error('Send attempts expired ({}), reconnecting...'.format(str(error)))
             else:
                 log.error('Send attempts expired, reconnecting...')
             self.reconnect()

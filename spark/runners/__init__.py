@@ -20,9 +20,7 @@
 import importlib
 
 
-'''
-Determine which runner is responsible for which job type.
-'''
+# Determine which runner is responsible for which job type.
 PLUGINS = {
     'package-build': 'spark.runners.debspawn',
     'os-image-build': 'spark.runners.image_build',

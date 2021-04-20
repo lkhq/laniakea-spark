@@ -21,6 +21,7 @@
 import shlex
 import subprocess
 from io import StringIO
+from ..joblog import JobLog
 
 
 class SubprocessError(Exception):
@@ -29,6 +30,8 @@ class SubprocessError(Exception):
         self.err = err
         self.ret = ret
         self.cmd = cmd
+        super(SubprocessError, self).__init__(
+            "%s: %d\n%s" % (str(self.cmd), self.ret, str(self.err)))
 
     def __str__(self):
         return "%s: %d\n%s" % (str(self.cmd), self.ret, str(self.err))
@@ -73,13 +76,25 @@ def safe_run(cmd, input=None, expected=0):
     return out, err, ret
 
 
-def run_logged(jlog, cmd, return_output=False, **kwargs):
+def run_logged(jlog: JobLog, cmd: list[str], return_output=False, **kwargs):
+    '''Run a command and log output to the job logfile.
 
-    def bytes2str(s):
-        if isinstance(s, (bytes, bytearray)):
-            s = str(s, 'utf-8', errors='replace')
-        return s
+    Parameters
+    ----------
+    jlog
+        The job log to use
+    cmd
+        Command to execute
+    return_output
+        Whether to save the output to return as string when the function completes.
 
+    Returns
+    -------
+    ret : int
+        Return code of the process
+    outbuf : str or None
+        Process output as string if `return_output` was True
+    '''
     p = subprocess.Popen(cmd, **kwargs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
 
     # capture live output and send it to all places that are interested in
@@ -96,6 +111,6 @@ def run_logged(jlog, cmd, return_output=False, **kwargs):
 
     ret = p.returncode
     if ret:
-        jlog.write('Command {0} failed with error code {1}'.format(cmd, ret))
+        jlog.write('Command {0} failed with error code {1}'.format(' '.join(cmd), ret))
 
     return ret, outbuf.getvalue()

@@ -117,7 +117,7 @@ def checkout(dsc_url):
 
 
 def get_version():
-    out, err, ret = run_command([
+    out, _, ret = run_command([
         'debspawn', '--version'
     ])
     if ret != 0:
