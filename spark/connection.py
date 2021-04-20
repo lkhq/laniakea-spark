@@ -85,6 +85,9 @@ class ServerConnection:
         # connect
         self._sock.connect(self._conf.lighthouse_server)
 
+        self._poller = zmq.Poller()
+        self._poller.register(self._sock, zmq.POLLIN)
+
     def reconnect(self):
         """
         Re-establish connection. The lazy answer in case we got
@@ -101,7 +104,12 @@ class ServerConnection:
 
         try:
             self._sock.send_string(to_compact_json(req))
-            if self._sock.poll(RESPONSE_WAIT_TIME) == zmq.POLLIN:
+            try:
+                sockev = dict(self._poller.poll(RESPONSE_WAIT_TIME))
+            except zmq.error.ZMQError as e:
+                self._send_attempt_failed()
+                raise ReplyException('ZMQ error while waiting for reply: ' + str(e))
+            if sockev.get(self._sock) == zmq.POLLIN:
                 self._sock.recv()  # discard reply
         except zmq.error.ZMQError as e:
             self._send_attempt_failed(e)
@@ -117,9 +125,6 @@ class ServerConnection:
         Request a new job from the server.
         """
 
-        poller = zmq.Poller()
-        poller.register(self._sock, zmq.POLLIN)
-
         # construct job request
         req = dict(self._base_req)
         req['request'] = 'job'
@@ -132,7 +137,7 @@ class ServerConnection:
         # wait for a reply
         job_reply_msgs = None
         try:
-            sockev = dict(poller.poll(RESPONSE_WAIT_TIME))
+            sockev = dict(self._poller.poll(RESPONSE_WAIT_TIME))
         except zmq.error.ZMQError as e:
             self._send_attempt_failed()
             raise ReplyException('ZMQ error while polling for reply: ' + str(e))
