@@ -44,6 +44,7 @@ setup(
 
     python_requires='>=3.9',
     platforms=['any'],
+    zip_safe=False,
     entry_points=scripts,
     install_requires=install_requires,
 )
