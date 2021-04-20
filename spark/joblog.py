@@ -17,9 +17,9 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
+import threading
 from io import StringIO
 from contextlib import contextmanager
-import threading
 from spark.utils.misc import to_compact_json
 
 

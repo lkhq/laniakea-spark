@@ -21,7 +21,6 @@
 import shlex
 import subprocess
 from io import StringIO
-from ..joblog import JobLog
 
 
 class SubprocessError(Exception):
@@ -76,12 +75,12 @@ def safe_run(cmd, input=None, expected=0):
     return out, err, ret
 
 
-def run_logged(jlog: JobLog, cmd: list[str], return_output=False, **kwargs):
+def run_logged(jlog, cmd: list[str], return_output=False, **kwargs):
     '''Run a command and log output to the job logfile.
 
     Parameters
     ----------
-    jlog
+    jlog JobLog
         The job log to use
     cmd
         Command to execute
