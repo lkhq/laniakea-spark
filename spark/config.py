@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2017-2018 Matthias Klumpp <matthias@tenstral.net>
+# Copyright (C) 2017-2021 Matthias Klumpp <matthias@tenstral.net>
 #
 # Licensed under the GNU Lesser General Public License Version 3
 #
@@ -17,8 +17,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
-import json
 import os
+import toml
 import platform
 from typing import List
 from pathlib import Path
@@ -34,13 +34,13 @@ class LocalConfig:
 
     def load(self, fname=None):
         if not fname:
-            fname = '/etc/laniakea/spark.json'
+            fname = '/etc/laniakea/spark.toml'
 
-        jdata = None
-        with open(fname) as json_file:
-            jdata = json.load(json_file)
+        cdata = None
+        with open(fname) as toml_file:
+            cdata = toml.load(toml_file)
 
-        self._machine_name = jdata.get('MachineName')
+        self._machine_name = cdata.get('MachineName')
         if not self._machine_name:
             self._machine_name = Path('/etc/hostname').read_text().strip('\n').strip()
 
@@ -50,24 +50,24 @@ class LocalConfig:
         # make an UUID for this client from the machine name
         self._make_client_uuid(self._machine_name)
 
-        self._lighthouse_server = jdata.get('LighthouseServer')
+        self._lighthouse_server = cdata.get('LighthouseServer')
         if not self._lighthouse_server:
             raise Exception('The "LighthouseServer" configuration entry is missing. Please specify the address of a Lighthouse server.')
 
-        self._max_jobs = int(jdata.get("MaxJobs", 1))
+        self._max_jobs = int(cdata.get("MaxJobs", 1))
         if self._max_jobs < 1:
             raise Exception('The maximum number of jobs can not be < 1.')
 
         self._client_cert_fname = os.path.join(self.CERTS_BASE_DIR, 'secret', '{0}-spark_private.sec'.format(self.machine_name))
         self._server_cert_fname = os.path.join(self.CERTS_BASE_DIR, '{0}_lighthouse-server.pub'.format(self.machine_name))
 
-        workspace_root = jdata.get('WorkspaceRoot')
+        workspace_root = cdata.get('WorkspaceRoot')
         if not workspace_root:
             workspace_root = '/var/lib/lkspark/'
         self._workspace_dir = os.path.join(workspace_root, 'workspaces')
         self._job_log_dir = os.path.join(workspace_root, 'logs')
 
-        self._architectures = jdata.get("Architectures")
+        self._architectures = cdata.get("Architectures")
         if not self._architectures:
             import re
             # try to rescue doing some poor mapping to the Debian arch vendor strings
@@ -83,14 +83,14 @@ class LocalConfig:
                 self._architectures = [machine_str]
                 log.warning('Using auto-detected architecture name: {}'.format(machine_str))
 
-        self._accepted_job_kinds = jdata.get("AcceptedJobs")
+        self._accepted_job_kinds = cdata.get("AcceptedJobs")
         if not self._accepted_job_kinds:
             raise Exception('The essential "AcceptedJobs" configuration entry is missing - without accepting any job type, running this daemon is pointless.')
 
-        self._dput_host = jdata.get('DputHost')
+        self._dput_host = cdata.get('DputHost')
         if not self._dput_host:
             raise Exception('The essential "DputHost" configuration entry is missing.')
-        self._gpg_key_id = jdata.get('GpgKeyID')
+        self._gpg_key_id = cdata.get('GpgKeyID')
         if not self._gpg_key_id:
             raise Exception('The essential "GpgKeyID" configuration entry is missing.')
 

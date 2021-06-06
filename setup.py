@@ -23,6 +23,7 @@ data_files = [
 long_description = ""
 
 install_requires = [
+    'toml>=0.10',
     'pyzmq>=16',
     'python-debian>=0.1.28',
     'firehose>=0.5'

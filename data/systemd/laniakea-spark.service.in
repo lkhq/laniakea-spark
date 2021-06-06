@@ -1,7 +1,7 @@
 [Unit]
 Description=Laniakea Spark
 After=syslog.target network.target
-ConditionPathExists=/etc/laniakea/spark.json
+ConditionPathExists=/etc/laniakea/spark.toml
 
 [Service]
 Type=simple
