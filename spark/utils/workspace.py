@@ -76,7 +76,7 @@ def debspawn_run_commandfile(jlog, suite: str, arch: str, *,
     if build_dir:
         ds_cmd.extend(['--build-dir', build_dir])
     if allow_kvm:
-        ds_cmd.append('--allow={}'.format('kvm'))
+        ds_cmd.append('--allow={}'.format('kvm,read-kmods'))
     if cache_key:
         ds_cmd.extend(['--cachekey', '{}-{}'.format(suite, cache_key)])
     if init_script:
