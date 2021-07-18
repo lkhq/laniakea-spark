@@ -33,6 +33,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install flake8 pytest pylint mypy
         pip install -r requirements.txt
+        pip install toml types-toml
 
     - name: Build & Install
       run: |
