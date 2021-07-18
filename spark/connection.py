@@ -110,7 +110,7 @@ class ServerConnection:
                 self._send_attempt_failed()
                 raise ReplyException('ZMQ error while waiting for reply: ' + str(e)) from e
             if sockev.get(self._sock) == zmq.POLLIN:
-                self._sock.recv()  # discard reply
+                self._sock.recv_multipart()  # discard reply
         except zmq.error.ZMQError as e:
             self._send_attempt_failed(e)
 
