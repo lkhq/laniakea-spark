@@ -104,15 +104,18 @@ class ServerConnection:
 
         try:
             self._sock.send_string(to_compact_json(req))
-            try:
-                sockev = dict(self._poller.poll(RESPONSE_WAIT_TIME))
-            except zmq.error.ZMQError as e:
-                self._send_attempt_failed()
-                raise ReplyException('ZMQ error while waiting for reply: ' + str(e)) from e
-            if sockev.get(self._sock) == zmq.POLLIN:
-                self._sock.recv_multipart()  # discard reply
         except zmq.error.ZMQError as e:
             self._send_attempt_failed(e)
+            log.error('ZMQ error while sending job status: %s', str(e))
+        try:
+            sockev = dict(self._poller.poll(RESPONSE_WAIT_TIME))
+        except zmq.error.ZMQError as e:
+            self._send_attempt_failed()
+            log.error('ZMQ error while waiting for reply: %s', str(e))
+        if sockev.get(self._sock) == zmq.POLLIN:
+            self._sock.recv_multipart()  # discard reply
+        else:
+            log.error('Unable to send job status: No reply from master')
 
     def new_base_request(self):
         """
