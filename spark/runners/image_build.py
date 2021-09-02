@@ -53,7 +53,9 @@ def build_image(jlog, host_arch: str, job, jdata):
     init_commands = []
     cache_key = None
     if os.path.isfile(init_script):
-        cache_key = 'mkimage-{}-{}-{}'.format(image_format, env_name, image_style)
+        cache_key = 'mkimage-{}-{}-{}'.format(image_format,
+                                              env_name if env_name else 'any',
+                                              image_style if image_style else 'any')
         init_commands.append('export DEBIAN_FRONTEND=noninteractive')
         init_commands.append('cd /srv/build')
         init_commands.append('exec ./prepare.sh')
