@@ -37,7 +37,7 @@ class LocalConfig:
             fname = '/etc/laniakea/spark.toml'
 
         cdata = None
-        with open(fname) as toml_file:
+        with open(fname, encoding='utf8') as toml_file:
             cdata = toml.load(toml_file)
 
         self._machine_name = cdata.get('MachineName')

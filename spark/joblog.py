@@ -32,7 +32,7 @@ class JobLog:
     def __init__(self, lhconn, job_id, log_fname):
         self._conn = lhconn
         self._buf = StringIO()
-        self._file = open(log_fname, 'w')
+        self._file = open(log_fname, 'w', encoding='utf8')
         self._last_msg_excerpt = ''
         self._job_id = job_id
 
