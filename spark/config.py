@@ -42,10 +42,10 @@ class LocalConfig:
 
         self._machine_name = cdata.get('MachineName')
         if not self._machine_name:
-            self._machine_name = Path('/etc/hostname').read_text().strip('\n').strip()
+            self._machine_name = Path('/etc/hostname').read_text(encoding='utf-8').strip('\n').strip()
 
         # read the machine ID
-        self._machine_id = Path('/etc/machine-id').read_text().strip('\n').strip()
+        self._machine_id = Path('/etc/machine-id').read_text(encoding='utf-8').strip('\n').strip()
 
         # make an UUID for this client from the machine name
         self._make_client_uuid(self._machine_name)
