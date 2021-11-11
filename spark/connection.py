@@ -70,7 +70,7 @@ class ServerConnection:
         self._base_req['machine_id'] = self._conf.client_uuid
 
         # initialize Lighthouse socket
-        self._sock = self._zctx.socket(zmq.DEALER)
+        self._sock = self._zctx.socket(zmq.REQ)
 
         # set server certificate
         server_public, _ = zmq.auth.load_certificate(self._conf.server_cert_fname)
