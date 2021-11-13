@@ -71,6 +71,7 @@ class ServerConnection:
 
         # initialize Lighthouse socket
         self._sock = self._zctx.socket(zmq.REQ)
+        self._sock.setsockopt(zmq.REQ_RELAXED, 1)
 
         # set server certificate
         server_public, _ = zmq.auth.load_certificate(self._conf.server_cert_fname)
@@ -190,8 +191,14 @@ class ServerConnection:
         elif type(s) is not bytes:
             data = str(s).encode('utf-8')
 
-        mt = self._sock.send(data, copy=False, track=True)
+        self._sock.send(data, copy=False, track=True)
         try:
-            mt.wait(4)  # wait for 4 seconds for the mesage to be sent
+            sockev = dict(self._poller.poll(RESPONSE_WAIT_TIME))
         except zmq.error.ZMQError as e:
-            self._send_attempt_failed(e)
+            self._send_attempt_failed()
+
+        if sockev.get(self._sock) == zmq.POLLIN:
+            self._sock.recv_multipart()  # discard reply
+        else:
+            self._send_attempt_failed()
+            log.info('Received no ACK from server for noreply request.')
