@@ -195,7 +195,7 @@ class ServerConnection:
         try:
             sockev = dict(self._poller.poll(RESPONSE_WAIT_TIME))
         except zmq.error.ZMQError as e:
-            self._send_attempt_failed()
+            self._send_attempt_failed(e)
 
         if sockev.get(self._sock) == zmq.POLLIN:
             self._sock.recv_multipart()  # discard reply
