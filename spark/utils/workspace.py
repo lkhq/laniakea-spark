@@ -17,12 +17,12 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
-import logging as log
 import os
 import shlex
-from contextlib import contextmanager
-from tempfile import NamedTemporaryFile
+import logging as log
 from typing import Optional
+from tempfile import NamedTemporaryFile
+from contextlib import contextmanager
 
 from spark import __appname__, __version__
 from spark.utils.command import run_logged
@@ -31,6 +31,7 @@ from spark.utils.command import run_logged
 @contextmanager
 def lkworkspace(wsdir):
     import shutil
+
     artifacts_dir = os.path.join(wsdir, 'artifacts')
     if not os.path.exists(artifacts_dir):
         os.makedirs(artifacts_dir)
@@ -61,17 +62,24 @@ def make_commandfile(job_id, commands):
     f.close()
 
 
-def debspawn_run_commandfile(jlog, suite: str, arch: str, *,
-                             build_dir: str, artifacts_dir: str, init_script: Optional[str] = None,
-                             command_script: str, header=None, allow_kvm=False, cache_key: Optional[str] = None):
+def debspawn_run_commandfile(
+    jlog,
+    suite: str,
+    arch: str,
+    *,
+    build_dir: str,
+    artifacts_dir: str,
+    init_script: Optional[str] = None,
+    command_script: str,
+    header=None,
+    allow_kvm=False,
+    cache_key: Optional[str] = None,
+):
     '''
     Execute a command-script file in a debspawn container with optional initial environment caching.
     '''
 
-    ds_cmd = ['debspawn',
-              'run',
-              '--external-command',
-              '--arch={}'.format(arch)]
+    ds_cmd = ['debspawn', 'run', '--external-command', '--arch={}'.format(arch)]
     if artifacts_dir:
         ds_cmd.extend(['--artifacts-out', artifacts_dir])
     if build_dir:

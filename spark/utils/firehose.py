@@ -20,8 +20,7 @@
 
 import logging as log
 
-from firehose.model import (Analysis, DebianBinary, DebianSource, Generator,
-                            Metadata)
+from firehose.model import Analysis, Metadata, Generator, DebianBinary, DebianSource
 
 
 def generate_sut_from_source(name, version, arch):
@@ -40,14 +39,16 @@ def generate_sut_from_binary(name, version, arch):
 
 def create_firehose(ptype, package_name, package_version, arch, version_getter):
     log.debug("Initializing empty firehose report")
-    sut = {
-        "source": generate_sut_from_source,
-        "binary": generate_sut_from_binary
-    }[ptype](package_name, package_version, arch)
+    sut = {"source": generate_sut_from_source, "binary": generate_sut_from_binary}[ptype](
+        package_name, package_version, arch
+    )
 
     gname_, gversion = version_getter()
     gname = "laniakea-spark/%s" % gname_
 
-    return Analysis(metadata=Metadata(
-        generator=Generator(name=gname, version=gversion),
-        sut=sut, file_=None, stats=None), results=[])
+    return Analysis(
+        metadata=Metadata(
+            generator=Generator(name=gname, version=gversion), sut=sut, file_=None, stats=None
+        ),
+        results=[],
+    )

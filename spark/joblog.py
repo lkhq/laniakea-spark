@@ -18,8 +18,8 @@
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
 import threading
-from contextlib import contextmanager
 from io import StringIO
+from contextlib import contextmanager
 
 from spark.utils.misc import to_compact_json
 
@@ -39,7 +39,7 @@ class JobLog:
 
         self._msg_template = self._conn.new_base_request()
         self._msg_template['request'] = 'job-status'
-        self._msg_template['uuid']    = str(job_id)
+        self._msg_template['uuid'] = str(job_id)
 
         self._have_output = False
         self._closed = False

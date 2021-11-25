@@ -17,12 +17,12 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
-import glob
 import os
+import glob
 import shlex
 
-from spark.utils.command import run_logged, safe_run
-from spark.utils.workspace import debspawn_run_commandfile, make_commandfile
+from spark.utils.command import safe_run, run_logged
+from spark.utils.workspace import make_commandfile, debspawn_run_commandfile
 
 
 def get_version():
@@ -41,22 +41,17 @@ def build_image(jlog, host_arch: str, job, jdata):
     image_style = jdata.get('style')
 
     # clone the image build recipe repository
-    safe_run(['git', 'clone',
-              '--depth=1',
-              jdata.get('git_url'),
-              'ib'])
-    run_logged(jlog,
-               ['git', 'log', '--pretty=oneline', '-1'],
-               cwd=os.path.abspath('ib'))
+    safe_run(['git', 'clone', '--depth=1', jdata.get('git_url'), 'ib'])
+    run_logged(jlog, ['git', 'log', '--pretty=oneline', '-1'], cwd=os.path.abspath('ib'))
 
     # test if we have a prepare script and something to cache
     init_script = os.path.join('ib', 'prepare.sh')
     init_commands = []
     cache_key = None
     if os.path.isfile(init_script):
-        cache_key = 'mkimage-{}-{}-{}'.format(image_format,
-                                              env_name if env_name else 'any',
-                                              image_style if image_style else 'any')
+        cache_key = 'mkimage-{}-{}-{}'.format(
+            image_format, env_name if env_name else 'any', image_style if image_style else 'any'
+        )
         init_commands.append('export DEBIAN_FRONTEND=noninteractive')
         init_commands.append('cd /srv/build')
         init_commands.append('exec ./prepare.sh')
@@ -76,20 +71,20 @@ def build_image(jlog, host_arch: str, job, jdata):
 
     with make_commandfile(jlog.job_id, init_commands) as shi_fname:
         with make_commandfile(jlog.job_id, commands) as shc_fname:
-            ret, _ = debspawn_run_commandfile(jlog,
-                                              suite_name,
-                                              host_arch,
-                                              build_dir=os.path.abspath('ib'),
-                                              artifacts_dir=os.path.abspath('artifacts'),
-                                              init_script=shi_fname if init_commands else None,
-                                              command_script=shc_fname,
-                                              header='{} {} image build for {} {} [{}]'.format(distro_name,
-                                                                                               image_format.upper(),
-                                                                                               suite_name,
-                                                                                               env_name,
-                                                                                               image_style),
-                                              allow_kvm=True,
-                                              cache_key=cache_key)
+            ret, _ = debspawn_run_commandfile(
+                jlog,
+                suite_name,
+                host_arch,
+                build_dir=os.path.abspath('ib'),
+                artifacts_dir=os.path.abspath('artifacts'),
+                init_script=shi_fname if init_commands else None,
+                command_script=shc_fname,
+                header='{} {} image build for {} {} [{}]'.format(
+                    distro_name, image_format.upper(), suite_name, env_name, image_style
+                ),
+                allow_kvm=True,
+                cache_key=cache_key,
+            )
     if ret != 0:
         return False, None, None
 

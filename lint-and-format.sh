@@ -14,4 +14,9 @@ echo "✓"
 
 echo "=== MyPy ==="
 python -m mypy .
-echo "✓"
+
+echo "=== ISort ==="
+isort .
+
+echo "=== Black ==="
+black .

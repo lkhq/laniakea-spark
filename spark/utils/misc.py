@@ -17,8 +17,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
-import json
 import os
+import json
 import shutil
 import tempfile
 from contextlib import contextmanager
@@ -62,8 +62,5 @@ def to_compact_json(json_object, sort_keys=False):
     Create JSON representation of :json_object in the most
     compact way possible.
     '''
-    data = json.dumps(json_object,
-                      ensure_ascii=False,
-                      separators=(',', ':'),
-                      sort_keys=sort_keys)
+    data = json.dumps(json_object, ensure_ascii=False, separators=(',', ':'), sort_keys=sort_keys)
     return str(data)

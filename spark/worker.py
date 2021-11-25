@@ -17,15 +17,15 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
-import logging as log
 import os
-import shutil
 import time
+import shutil
+import logging as log
 from email.utils import formatdate
 
-from spark.connection import JobStatus, ServerErrorException
 from spark.joblog import job_log
 from spark.runners import PLUGINS, load_module
+from spark.connection import JobStatus, ServerErrorException
 
 
 class Worker:
@@ -44,8 +44,8 @@ class Worker:
         way and we did not reject it again.
         '''
 
-        from spark.utils.deb822 import Changes
         from spark.utils.misc import cd, upload
+        from spark.utils.deb822 import Changes
         from spark.utils.workspace import lkworkspace
 
         # basic job information
@@ -66,7 +66,11 @@ class Worker:
                 os.makedirs(self._conf.job_log_dir)
         except OSError as e:
             self._conn.send_job_status(job_id, JobStatus.REJECTED)
-            log.error('Failed to create working directory for \'{}\': {} (job forwarded)'.format(job_id, str(e)))
+            log.error(
+                'Failed to create working directory for \'{}\': {} (job forwarded)'.format(
+                    job_id, str(e)
+                )
+            )
             try:
                 shutil.rmtree(workspace)
             except Exception:
@@ -93,6 +97,7 @@ class Worker:
                     build_success, files, changes = run(jlog, job, job.get('data'))
                 except:  # noqa: E722 pylint: disable=bare-except
                     import traceback
+
                     tb = traceback.format_exc()
                     jlog.write(tb)
                     self._conn.send_job_status(job_id, JobStatus.REJECTED)
@@ -139,6 +144,7 @@ class Worker:
                     upload(dudf, self._conf.gpg_key_id, self._conf.dput_host)
                 except Exception as e:
                     import sys
+
                     print(e, file=sys.stderr)
                     success = False
 
@@ -171,13 +177,17 @@ class Worker:
             return False
 
         job_module = job_reply.get('module')
-        job_kind   = job_reply.get('kind')
-        job_id     = job_reply.get('uuid')
+        job_kind = job_reply.get('kind')
+        job_id = job_reply.get('uuid')
 
         if job_kind in self._conf.accepted_job_kinds:
             return self._run_job(job_reply)
         else:
-            log.warning('Received job of type {0}::{1} which we can not handle.'.format(job_module, job_kind))
+            log.warning(
+                'Received job of type {0}::{1} which we can not handle.'.format(
+                    job_module, job_kind
+                )
+            )
             self._conn.send_job_status(job_id, JobStatus.REJECTED)
             return False
 

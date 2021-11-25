@@ -30,7 +30,8 @@ class SubprocessError(Exception):
         self.ret = ret
         self.cmd = cmd
         super(SubprocessError, self).__init__(
-            "%s: %d\n%s" % (str(self.cmd), self.ret, str(self.err)))
+            "%s: %d\n%s" % (str(self.cmd), self.ret, str(self.err))
+        )
 
     def __str__(self):
         return "%s: %d\n%s" % (str(self.cmd), self.ret, str(self.err))
@@ -49,12 +50,13 @@ def run_command(command, input=None):
         input = input.read()
 
     try:
-        pipe = subprocess.Popen(command,
-                                shell=False,
-                                stdin=subprocess.PIPE,
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE,
-                                )
+        pipe = subprocess.Popen(
+            command,
+            shell=False,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
     except OSError:
         return (None, None, -1)
 
@@ -65,7 +67,7 @@ def run_command(command, input=None):
 
 def safe_run(cmd, input=None, expected=0):
     if not isinstance(expected, tuple):
-        expected = (expected, )
+        expected = (expected,)
 
     out, err, ret = run_command(cmd, input=input)
 
@@ -94,7 +96,9 @@ def run_logged(jlog, cmd: list[str], return_output=False, **kwargs):
     outbuf : str or None
         Process output as string if `return_output` was True
     '''
-    p = subprocess.Popen(cmd, **kwargs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False)
+    p = subprocess.Popen(
+        cmd, **kwargs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False
+    )
 
     # capture live output and send it to all places that are interested in
     # logging it (except for our stdout).

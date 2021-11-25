@@ -19,8 +19,8 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-import hashlib
 import os
+import hashlib
 
 from debian.deb822 import Changes as Changes_
 from debian.deb822 import _gpg_multivalued
@@ -59,16 +59,14 @@ class Changes(Changes_):
                     m.update(chunk)
 
             if key != "Files":
-                self[key].append({
-                    algo: m.hexdigest(),
-                    "size": size,
-                    "name": fp
-                })
+                self[key].append({algo: m.hexdigest(), "size": size, "name": fp})
             else:
-                self[key].append({
-                    "md5sum": m.hexdigest(),
-                    "size": size,
-                    "section": 'spark',
-                    "priority": 'spark',
-                    "name": fp
-                })
+                self[key].append(
+                    {
+                        "md5sum": m.hexdigest(),
+                        "size": size,
+                        "section": 'spark',
+                        "priority": 'spark',
+                        "name": fp,
+                    }
+                )

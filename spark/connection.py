@@ -17,9 +17,9 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 import json
 import logging as log
-import os
 
 import zmq
 import zmq.auth
@@ -30,8 +30,8 @@ from spark.utils.misc import to_compact_json
 class JobStatus:
     ACCEPTED = 'accepted'
     REJECTED = 'rejected'
-    SUCCESS  = 'success'
-    FAILED   = 'failed'
+    SUCCESS = 'success'
+    FAILED = 'failed'
 
 
 class ReplyException(Exception):
@@ -51,10 +51,13 @@ RESPONSE_WAIT_TIME = 15000  # 15sec
 
 
 class ServerConnection:
-
     def __init__(self, conf, ctx):
         if zmq.zmq_version_info() < (4, 0):
-            raise RuntimeError("Security is not supported in libzmq version < 4.0. libzmq version {0}".format(zmq.zmq_version()))
+            raise RuntimeError(
+                "Security is not supported in libzmq version < 4.0. libzmq version {0}".format(
+                    zmq.zmq_version()
+                )
+            )
         self._conf = conf
         self._zctx = ctx
 
@@ -162,7 +165,9 @@ class ServerConnection:
         try:
             job_reply = json.loads(str(job_reply_raw, 'utf-8'))
         except Exception as e:
-            raise MessageException('Unable to decode server reply ({0}): {1}'.format(job_reply_raw, str(e))) from e
+            raise MessageException(
+                'Unable to decode server reply ({0}): {1}'.format(job_reply_raw, str(e))
+            ) from e
         if not job_reply:
             log.debug('No new jobs.')
             return None
@@ -170,10 +175,14 @@ class ServerConnection:
         try:
             server_error = job_reply.get('error')
         except Exception as e:
-            raise ServerErrorException('Received unexpected server reply: {}'.format(str(job_reply))) from e
+            raise ServerErrorException(
+                'Received unexpected server reply: {}'.format(str(job_reply))
+            ) from e
 
         if server_error:
-            raise ServerErrorException('Received error message from server: {}'.format(server_error))
+            raise ServerErrorException(
+                'Received error message from server: {}'.format(server_error)
+            )
 
         return job_reply
 

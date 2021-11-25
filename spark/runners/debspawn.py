@@ -21,16 +21,16 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-import glob
 import os
 import re
-from datetime import timedelta
+import glob
 from io import StringIO
+from datetime import timedelta
 
 import firehose.parsers.gcc as fgcc
 from firehose.model import Stats
 
-from spark.utils.command import run_command, run_logged, safe_run
+from spark.utils.command import safe_run, run_logged, run_command
 from spark.utils.firehose import create_firehose
 
 STATS = re.compile('Build needed (?P<time>.*), (?P<space>.*) dis(c|k) space')
@@ -49,7 +49,7 @@ def parse_debspawn_log(log, sut):
             timed = timedelta(hours=hours, minutes=minutes, seconds=seconds)
             stats = Stats(timed.total_seconds())
         if line.startswith(flag):
-            line = line[len(flag):].strip()
+            line = line[len(flag) :].strip()
             packages = line.split(' ')
             versions = {}
             for package in packages:
@@ -63,12 +63,7 @@ def parse_debspawn_log(log, sut):
             vs = vs[0]
             gccversion = versions[vs]
 
-    obj = fgcc.parse_file(
-        StringIO(log),
-        sut=sut,
-        gccversion=gccversion,
-        stats=stats
-    )
+    obj = fgcc.parse_file(StringIO(log), sut=sut, gccversion=gccversion, stats=stats)
 
     return obj
 
@@ -77,11 +72,13 @@ def debspawn_build(jlog, dsc, maintainer, suite, affinity, build_arch, build_ind
     if not dsc.endswith('.dsc'):
         raise ValueError('WTF')
 
-    ds_cmd = ['debspawn',
-              'build',
-              '--no-buildlog',
-              '--arch={affinity}'.format(affinity=affinity),
-              '--results-dir={cwd}'.format(cwd=os.getcwd())]
+    ds_cmd = [
+        'debspawn',
+        'build',
+        '--no-buildlog',
+        '--arch={affinity}'.format(affinity=affinity),
+        '--results-dir={cwd}'.format(cwd=os.getcwd()),
+    ]
 
     if build_arch and not build_indep:
         ds_cmd.append('--only=arch')
@@ -97,8 +94,9 @@ def debspawn_build(jlog, dsc, maintainer, suite, affinity, build_arch, build_ind
     ret, out = run_logged(jlog, ds_cmd, True)
     for line in out.splitlines():
         if line.startswith('ERROR'):
-            if line.startswith('ERROR: The container image for') or \
-               line.startswith('ERROR: Build environment setup failed.'):
+            if line.startswith('ERROR: The container image for') or line.startswith(
+                'ERROR: Build environment setup failed.'
+            ):
                 # FIXME: This error is not the build's fault!
                 # we should reflect that somehow.
                 return (analysis, out, True, None)
@@ -116,9 +114,7 @@ def checkout(dsc_url):
 
 
 def get_version():
-    out, _, ret = run_command([
-        'debspawn', '--version'
-    ])
+    out, _, ret = run_command(['debspawn', '--version'])
     if ret != 0:
         raise Exception('debspawn is not installed')
     return ('debspawn', out.strip())
@@ -130,15 +126,14 @@ def run(jlog, job, jdata):
     build_indep = arch_name == 'all' or jdata['do_indep']
     maintainer = jdata.get('maintainer')
 
-    firehose = create_firehose('source',
-                               jdata['package_name'],
-                               jdata['package_version'],
-                               build_arch,
-                               get_version)
+    firehose = create_firehose(
+        'source', jdata['package_name'], jdata['package_version'], build_arch, get_version
+    )
 
     dsc = checkout(jdata['dsc_url'])
-    firehose, out, ftbfs, changes, = \
-        debspawn_build(jlog, dsc, maintainer, jdata['suite'], arch_name, build_arch, build_indep, firehose)
+    firehose, out, ftbfs, changes, = debspawn_build(
+        jlog, dsc, maintainer, jdata['suite'], arch_name, build_arch, build_indep, firehose
+    )
 
     if not changes and not ftbfs:
         print(out)

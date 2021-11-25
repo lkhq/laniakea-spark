@@ -17,20 +17,19 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
-import logging as log
-import shutil
 import sys
+import shutil
+import logging as log
 from multiprocessing import Process
 
 import zmq
 
 from spark.config import LocalConfig
-from spark.connection import ServerConnection
 from spark.worker import Worker
+from spark.connection import ServerConnection
 
 
 class Daemon:
-
     def __init__(self, log_level=None):
         if not log_level:
             log_level = log.INFO
@@ -49,7 +48,11 @@ class Daemon:
 
         # connect
         conn.connect()
-        log.info('Running {0} on {1} ({2})'.format(worker_name, self._conf.machine_name, self._conf.client_uuid))
+        log.info(
+            'Running {0} on {1} ({2})'.format(
+                worker_name, self._conf.machine_name, self._conf.client_uuid
+            )
+        )
 
         w = Worker(self._conf, conn)
         w.run()
@@ -58,11 +61,15 @@ class Daemon:
         # check Python platform version - 3.5 works while 3.6 or higher is properly tested
         pyversion = sys.version_info
         if pyversion < (3, 5):
-            raise Exception('Laniakea-Spark needs Python >= 3.5 to work. Please upgrade your Python version.')
+            raise Exception(
+                'Laniakea-Spark needs Python >= 3.5 to work. Please upgrade your Python version.'
+            )
         if pyversion >= (3, 5) and pyversion < (3, 6):
             log.info('Running on Python 3.5 while Python 3.6 is recommended.')
         if not shutil.which('debspawn'):
-            log.warning('The "debspawn" tool was not found in PATH, we will not be able to run most actions.')
+            log.warning(
+                'The "debspawn" tool was not found in PATH, we will not be able to run most actions.'
+            )
 
         self._conf = LocalConfig()
         self._conf.load()

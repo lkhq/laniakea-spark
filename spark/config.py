@@ -17,11 +17,11 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
-import logging as log
 import os
+import logging as log
 import platform
-from pathlib import Path
 from typing import List
+from pathlib import Path
 
 import toml
 
@@ -43,7 +43,9 @@ class LocalConfig:
 
         self._machine_name = cdata.get('MachineName')
         if not self._machine_name:
-            self._machine_name = Path('/etc/hostname').read_text(encoding='utf-8').strip('\n').strip()
+            self._machine_name = (
+                Path('/etc/hostname').read_text(encoding='utf-8').strip('\n').strip()
+            )
 
         # read the machine ID
         self._machine_id = Path('/etc/machine-id').read_text(encoding='utf-8').strip('\n').strip()
@@ -53,14 +55,21 @@ class LocalConfig:
 
         self._lighthouse_server = cdata.get('LighthouseServer')
         if not self._lighthouse_server:
-            raise Exception('The "LighthouseServer" configuration entry is missing. Please specify the address of a Lighthouse server.')
+            raise Exception(
+                'The "LighthouseServer" configuration entry is missing. '
+                'Please specify the address of a Lighthouse server.'
+            )
 
         self._max_jobs = int(cdata.get("MaxJobs", 1))
         if self._max_jobs < 1:
             raise Exception('The maximum number of jobs can not be < 1.')
 
-        self._client_cert_fname = os.path.join(self.CERTS_BASE_DIR, 'secret', '{0}-spark_private.sec'.format(self.machine_name))
-        self._server_cert_fname = os.path.join(self.CERTS_BASE_DIR, '{0}_lighthouse-server.pub'.format(self.machine_name))
+        self._client_cert_fname = os.path.join(
+            self.CERTS_BASE_DIR, 'secret', '{0}-spark_private.sec'.format(self.machine_name)
+        )
+        self._server_cert_fname = os.path.join(
+            self.CERTS_BASE_DIR, '{0}_lighthouse-server.pub'.format(self.machine_name)
+        )
 
         workspace_root = cdata.get('WorkspaceRoot')
         if not workspace_root:
@@ -87,7 +96,10 @@ class LocalConfig:
 
         self._accepted_job_kinds = cdata.get("AcceptedJobs")
         if not self._accepted_job_kinds:
-            raise Exception('The essential "AcceptedJobs" configuration entry is missing - without accepting any job type, running this daemon is pointless.')
+            raise Exception(
+                'The essential "AcceptedJobs" configuration entry is missing - '
+                'without accepting any job type, running this daemon is pointless.'
+            )
 
         self._dput_host = cdata.get('DputHost')
         if not self._dput_host:
