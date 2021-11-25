@@ -19,7 +19,6 @@
 
 import importlib
 
-
 # Determine which runner is responsible for which job type.
 PLUGINS = {
     'package-build': 'spark.runners.debspawn',

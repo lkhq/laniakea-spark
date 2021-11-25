@@ -17,12 +17,13 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
-import toml
-import platform
-from typing import List
-from pathlib import Path
 import logging as log
+import os
+import platform
+from pathlib import Path
+from typing import List
+
+import toml
 
 
 class LocalConfig:
@@ -70,6 +71,7 @@ class LocalConfig:
         self._architectures = cdata.get("Architectures")
         if not self._architectures:
             import re
+
             # try to rescue doing some poor mapping to the Debian arch vendor strings
             # for a couple of common architectures
             machine_str = platform.machine()

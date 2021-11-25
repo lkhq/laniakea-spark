@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
-from spark import __appname__, __version__
 from setuptools import setup
+
+from spark import __appname__, __version__
 
 packages = [
     'spark',

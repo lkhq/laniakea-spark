@@ -17,11 +17,12 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
-import tempfile
-import shutil
 import json
+import os
+import shutil
+import tempfile
 from contextlib import contextmanager
+
 from spark.utils.command import safe_run
 
 

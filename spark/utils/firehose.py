@@ -19,8 +19,9 @@
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging as log
-from firehose.model import (Analysis, Generator, Metadata,
-                            DebianBinary, DebianSource)
+
+from firehose.model import (Analysis, DebianBinary, DebianSource, Generator,
+                            Metadata)
 
 
 def generate_sut_from_source(name, version, arch):

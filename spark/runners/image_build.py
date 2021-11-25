@@ -17,11 +17,12 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
 import glob
+import os
 import shlex
-from spark.utils.workspace import make_commandfile, debspawn_run_commandfile
-from spark.utils.command import safe_run, run_logged
+
+from spark.utils.command import run_logged, safe_run
+from spark.utils.workspace import debspawn_run_commandfile, make_commandfile
 
 
 def get_version():

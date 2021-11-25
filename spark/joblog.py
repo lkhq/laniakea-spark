@@ -18,8 +18,9 @@
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
 import threading
-from io import StringIO
 from contextlib import contextmanager
+from io import StringIO
+
 from spark.utils.misc import to_compact_json
 
 

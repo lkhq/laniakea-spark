@@ -21,18 +21,17 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 # DEALINGS IN THE SOFTWARE.
 
-from firehose.model import Stats
-import firehose.parsers.gcc as fgcc
-
+import glob
+import os
+import re
 from datetime import timedelta
 from io import StringIO
-import glob
-import re
-import os
 
+import firehose.parsers.gcc as fgcc
+from firehose.model import Stats
+
+from spark.utils.command import run_command, run_logged, safe_run
 from spark.utils.firehose import create_firehose
-from spark.utils.command import run_logged, run_command, safe_run
-
 
 STATS = re.compile('Build needed (?P<time>.*), (?P<space>.*) dis(c|k) space')
 

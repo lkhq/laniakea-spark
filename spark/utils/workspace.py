@@ -17,14 +17,15 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging as log
 import os
 import shlex
-import logging as log
-from typing import Optional
 from contextlib import contextmanager
 from tempfile import NamedTemporaryFile
-from spark.utils.command import run_logged
+from typing import Optional
+
 from spark import __appname__, __version__
+from spark.utils.command import run_logged
 
 
 @contextmanager

@@ -17,15 +17,15 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
 import logging as log
-import time
+import os
 import shutil
+import time
 from email.utils import formatdate
 
 from spark.connection import JobStatus, ServerErrorException
 from spark.joblog import job_log
-from spark.runners import load_module, PLUGINS
+from spark.runners import PLUGINS, load_module
 
 
 class Worker:
@@ -44,9 +44,9 @@ class Worker:
         way and we did not reject it again.
         '''
 
-        from spark.utils.workspace import lkworkspace
         from spark.utils.deb822 import Changes
         from spark.utils.misc import cd, upload
+        from spark.utils.workspace import lkworkspace
 
         # basic job information
         job_id = job.get('uuid')

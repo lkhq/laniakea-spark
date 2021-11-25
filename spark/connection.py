@@ -17,11 +17,13 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
 import json
+import logging as log
+import os
+
 import zmq
 import zmq.auth
-import logging as log
+
 from spark.utils.misc import to_compact_json
 
 
