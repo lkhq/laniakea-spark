@@ -1,3 +1,4 @@
+tomlkit>=0.8
 pyzmq>=16
 python-debian>=0.1.28
 firehose>=0.5

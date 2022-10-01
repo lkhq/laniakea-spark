@@ -20,7 +20,7 @@ data_files = [('/var/lib/lkspark/', ['data/ws/README'])]
 
 long_description = ""
 
-install_requires = ['toml>=0.10', 'pyzmq>=16', 'python-debian>=0.1.28', 'firehose>=0.5']
+install_requires = ['tomlkit>=0.8', 'pyzmq>=16', 'python-debian>=0.1.28', 'firehose>=0.5']
 
 setup(
     name=__appname__,

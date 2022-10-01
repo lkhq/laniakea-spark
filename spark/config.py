@@ -18,12 +18,13 @@
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import sys
 import logging as log
 import platform
 from typing import List
 from pathlib import Path
 
-import toml
+import tomlkit
 
 
 class LocalConfig:
@@ -39,7 +40,14 @@ class LocalConfig:
 
         cdata = None
         with open(fname, encoding='utf8') as toml_file:
-            cdata = toml.load(toml_file)
+            try:
+                cdata = tomlkit.load(toml_file)
+            except tomlkit.exceptions.ParseError as e:
+                print(
+                    'Unable to parse configuration ({}): {}'.format(fname, str(e)),
+                    file=sys.stderr,
+                )
+                sys.exit(6)
 
         self._machine_name = cdata.get('MachineName')
         if not self._machine_name:
