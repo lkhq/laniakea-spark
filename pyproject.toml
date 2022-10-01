@@ -2,13 +2,20 @@
 name = "laniakea-spark"
 description = "Generic distributed job runner for Laniakea."
 authors = [
-    "Matthias Klumpp <matthias@tenstral.net>"
+    {name = "Matthias Klumpp", email = "matthias@tenstral.net"},
 ]
-license = "LGPL-3.0-or-later"
+license = {text="LGPL-3.0-or-later"}
 readme = "README.md"
-python = "^3.9"
-homepage = "https://github.com/lkhq/laniakea-spark"
-repository = "https://github.com/lkhq/laniakea-spark"
+requires-python = ">=3.9"
+dynamic = ['version']
+
+[project.urls]
+Documentation = "https://github.com/lkhq/laniakea-spark"
+Source = "https://github.com/lkhq/laniakea-spark"
+
+[build-system]
+requires = ["setuptools", "wheel", "pkgconfig"]
+build-backend = "setuptools.build_meta"
 
 [tool.pylint.master]
 
