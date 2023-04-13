@@ -27,6 +27,10 @@ from pathlib import Path
 import tomlkit
 
 
+class ConfigError(Exception):
+    """Some problem in the configuration was found."""
+
+
 class LocalConfig:
     """
     Local configuration for the spark daemon.
@@ -63,14 +67,14 @@ class LocalConfig:
 
         self._lighthouse_server = cdata.get('LighthouseServer')
         if not self._lighthouse_server:
-            raise Exception(
+            raise ConfigError(
                 'The "LighthouseServer" configuration entry is missing. '
                 'Please specify the address of a Lighthouse server.'
             )
 
         self._max_jobs = int(cdata.get("MaxJobs", 1))
         if self._max_jobs < 1:
-            raise Exception('The maximum number of jobs can not be < 1.')
+            raise ConfigError('The maximum number of jobs can not be < 1.')
 
         self._client_cert_fname = os.path.join(
             self.CERTS_BASE_DIR, 'secret', '{0}-spark_private.sec'.format(self.machine_name)
@@ -104,17 +108,17 @@ class LocalConfig:
 
         self._accepted_job_kinds = cdata.get("AcceptedJobs")
         if not self._accepted_job_kinds:
-            raise Exception(
+            raise ConfigError(
                 'The essential "AcceptedJobs" configuration entry is missing - '
                 'without accepting any job type, running this daemon is pointless.'
             )
 
         self._dput_host = cdata.get('DputHost')
         if not self._dput_host:
-            raise Exception('The essential "DputHost" configuration entry is missing.')
+            raise ConfigError('The essential "DputHost" configuration entry is missing.')
         self._gpg_key_id = cdata.get('GpgKeyID')
         if not self._gpg_key_id:
-            raise Exception('The essential "GpgKeyID" configuration entry is missing.')
+            raise ConfigError('The essential "GpgKeyID" configuration entry is missing.')
 
     def _make_client_uuid(self, machine_name):
         import uuid

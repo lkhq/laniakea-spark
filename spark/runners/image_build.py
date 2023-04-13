@@ -21,7 +21,7 @@ import os
 import glob
 import shlex
 
-from spark.utils import RunnerResult
+from spark.utils import RunnerError, RunnerResult
 from spark.utils.command import safe_run, run_logged
 from spark.utils.workspace import make_commandfile, debspawn_run_commandfile
 
@@ -61,7 +61,7 @@ def build_image(
 
     # construct build recipe
     if not os.path.isfile(os.path.join('ib', 'build.sh')):
-        raise Exception('No "build.sh" script found to build the image')
+        raise RunnerError('No "build.sh" script found to build the image')
     commands = []
     commands.append('export DEBIAN_FRONTEND=noninteractive')
     commands.append('export IB_SUITE="{}"'.format(shlex.quote(suite_name)))
@@ -92,7 +92,7 @@ def build_image(
         return RunnerResult.FAILURE, None, None
 
     # collect list of files to upload
-    files = []
+    files: list[str | os.PathLike] = []
     for f in glob.glob('artifacts/*'):
         files.append(os.path.abspath(f))
 

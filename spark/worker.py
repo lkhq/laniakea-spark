@@ -137,23 +137,20 @@ class Worker:
                     dud.dump(fd=fd)
 
                 # send the result to the remote server
-                if build_result != RunnerResult.INTERNAL_ERROR:
-                    try:
-                        if changes:
-                            upload(changes, self._conf.gpg_key_id, self._conf.dput_host)
-                        upload(dudf, self._conf.gpg_key_id, self._conf.dput_host)
-                    except Exception as e:
-                        import sys
+                try:
+                    if changes:
+                        upload(changes, self._conf.gpg_key_id, self._conf.dput_host)
+                    upload(dudf, self._conf.gpg_key_id, self._conf.dput_host)
+                except Exception as e:
+                    import sys
 
-                        print(e, file=sys.stderr)
+                    print(e, file=sys.stderr)
 
         jstatus = JobStatus.FAILED
         if build_result == RunnerResult.SUCCESS:
             jstatus = JobStatus.SUCCESS
         elif build_result == RunnerResult.DEPWAIT:
             jstatus = JobStatus.DEPWAIT
-        elif build_result == RunnerResult.INTERNAL_ERROR:
-            jstatus = JobStatus.REJECTED
 
         self._conn.send_job_status(job_id, jstatus)
         log.info('Finished job {0}, {1}'.format(job_id, str(jstatus)))

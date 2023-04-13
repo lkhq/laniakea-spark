@@ -5,6 +5,6 @@
 # SPDX-License-Identifier: LGPL-3.0+
 
 from spark.utils.misc import cd, tdir
-from spark.utils.workspace import RunnerResult
+from spark.utils.workspace import RunnerError, RunnerResult
 
-__all__ = ['RunnerResult', 'cd', 'tdir']
+__all__ = ['RunnerResult', 'RunnerError', 'cd', 'tdir']

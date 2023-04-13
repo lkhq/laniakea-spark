@@ -35,7 +35,10 @@ class RunnerResult(StrEnum):
     SUCCESS = 'success'
     FAILURE = 'failure'
     DEPWAIT = 'depwait'
-    INTERNAL_ERROR = 'failure_internal'
+
+
+class RunnerError(Exception):
+    """Emitted by runners when execution fails unexpectedly."""
 
 
 @contextmanager
