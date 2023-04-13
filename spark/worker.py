@@ -122,7 +122,7 @@ class Worker:
                 dud['Date'] = formatdate()
                 dud['Architecture'] = job_arch
                 dud['X-Spark-Job'] = str(job_id)
-                dud['X-Spark-Success'] = 'Yes' if build_result == RunnerResult.SUCCESS else 'No'
+                dud['X-Spark-Result'] = str(build_result)
 
                 # collect list of additional files to upload
                 files.append(log_fname)
@@ -149,8 +149,6 @@ class Worker:
         jstatus = JobStatus.FAILED
         if build_result == RunnerResult.SUCCESS:
             jstatus = JobStatus.SUCCESS
-        elif build_result == RunnerResult.DEPWAIT:
-            jstatus = JobStatus.DEPWAIT
 
         self._conn.send_job_status(job_id, jstatus)
         log.info('Finished job {0}, {1}'.format(job_id, str(jstatus)))

@@ -35,7 +35,6 @@ class JobStatus(StrEnum):
     REJECTED = 'rejected'  # worker rejected taking the job
     SUCCESS = 'success'  # success
     FAILED = 'failed'  # job failed
-    DEPWAIT = 'depwait'  # waits for a dependency
 
 
 class ReplyException(Exception):
