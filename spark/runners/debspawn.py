@@ -30,6 +30,7 @@ from datetime import timedelta
 import firehose.parsers.gcc as fgcc
 from firehose.model import Stats
 
+from spark.utils import RunnerResult
 from spark.utils.command import safe_run, run_logged, run_command
 from spark.utils.firehose import create_firehose
 
@@ -120,7 +121,9 @@ def get_version():
     return ('debspawn', out.strip())
 
 
-def run(jlog, job, jdata):
+def run(
+    jlog, job, jdata
+) -> tuple[RunnerResult, list[os.PathLike | str] | None, os.PathLike | None]:
     arch_name = job['architecture']
     build_arch = arch_name != 'all'
     build_indep = arch_name == 'all' or jdata['do_indep']
@@ -131,7 +134,12 @@ def run(jlog, job, jdata):
     )
 
     dsc = checkout(jdata['dsc_url'])
-    firehose, out, ftbfs, changes, = debspawn_build(
+    (
+        firehose,
+        out,
+        ftbfs,
+        changes,
+    ) = debspawn_build(
         jlog, dsc, maintainer, jdata['suite'], arch_name, build_arch, build_indep, firehose
     )
 
@@ -155,4 +163,4 @@ def run(jlog, job, jdata):
         fd.write(firehose.to_xml_bytes())
     files.append(os.path.abspath(firehose_fname))
 
-    return not ftbfs, files, changes
+    return RunnerResult.FAILURE if ftbfs else RunnerResult.SUCCESS, files, changes

@@ -60,12 +60,10 @@ class Daemon:
     def run(self):
         # check Python platform version - 3.5 works while 3.6 or higher is properly tested
         pyversion = sys.version_info
-        if pyversion < (3, 5):
+        if pyversion < (3, 11):
             raise Exception(
-                'Laniakea-Spark needs Python >= 3.5 to work. Please upgrade your Python version.'
+                'Laniakea-Spark needs Python >= 3.11 to work. Please upgrade your Python version.'
             )
-        if pyversion >= (3, 5) and pyversion < (3, 6):
-            log.info('Running on Python 3.5 while Python 3.6 is recommended.')
         if not shutil.which('debspawn'):
             log.warning(
                 'The "debspawn" tool was not found in PATH, we will not be able to run most actions.'

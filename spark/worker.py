@@ -23,6 +23,7 @@ import shutil
 import logging as log
 from email.utils import formatdate
 
+from spark.utils import RunnerResult
 from spark.joblog import job_log
 from spark.runners import PLUGINS, load_module
 from spark.connection import JobStatus, ServerErrorException
@@ -80,7 +81,6 @@ class Worker:
         # set the logfile and run the job
         log.info('Running job \'{}\''.format(job_id))
         log_fname = os.path.join(self._conf.job_log_dir, '{}.log'.format(job_id))
-        success = False
 
         runner_name = job['kind']
         if not PLUGINS.get(runner_name):
@@ -94,7 +94,7 @@ class Worker:
         with lkworkspace(workspace):
             with job_log(self._conn, job_id, log_fname) as jlog:
                 try:
-                    build_success, files, changes = run(jlog, job, job.get('data'))
+                    build_result, files, changes = run(jlog, job, job.get('data'))
                 except:  # noqa: E722 pylint: disable=bare-except
                     import traceback
 
@@ -122,7 +122,7 @@ class Worker:
                 dud['Date'] = formatdate()
                 dud['Architecture'] = job_arch
                 dud['X-Spark-Job'] = str(job_id)
-                dud['X-Spark-Success'] = 'Yes' if build_success else 'No'
+                dud['X-Spark-Success'] = 'Yes' if build_result == RunnerResult.SUCCESS else 'No'
 
                 # collect list of additional files to upload
                 files.append(log_fname)
@@ -137,20 +137,23 @@ class Worker:
                     dud.dump(fd=fd)
 
                 # send the result to the remote server
-                success = build_success
-                try:
-                    if changes:
-                        upload(changes, self._conf.gpg_key_id, self._conf.dput_host)
-                    upload(dudf, self._conf.gpg_key_id, self._conf.dput_host)
-                except Exception as e:
-                    import sys
+                if build_result != RunnerResult.INTERNAL_ERROR:
+                    try:
+                        if changes:
+                            upload(changes, self._conf.gpg_key_id, self._conf.dput_host)
+                        upload(dudf, self._conf.gpg_key_id, self._conf.dput_host)
+                    except Exception as e:
+                        import sys
 
-                    print(e, file=sys.stderr)
-                    success = False
+                        print(e, file=sys.stderr)
 
         jstatus = JobStatus.FAILED
-        if success:
+        if build_result == RunnerResult.SUCCESS:
             jstatus = JobStatus.SUCCESS
+        elif build_result == RunnerResult.DEPWAIT:
+            jstatus = JobStatus.DEPWAIT
+        elif build_result == RunnerResult.INTERNAL_ERROR:
+            jstatus = JobStatus.REJECTED
 
         self._conn.send_job_status(job_id, jstatus)
         log.info('Finished job {0}, {1}'.format(job_id, str(jstatus)))

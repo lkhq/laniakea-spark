@@ -20,12 +20,22 @@
 import os
 import shlex
 import logging as log
+from enum import StrEnum
 from typing import Optional
 from tempfile import NamedTemporaryFile
 from contextlib import contextmanager
 
 from spark import __appname__, __version__
 from spark.utils.command import run_logged
+
+
+class RunnerResult(StrEnum):
+    """Result of the run action of a job runner"""
+
+    SUCCESS = 'success'
+    FAILURE = 'failure'
+    DEPWAIT = 'depwait'
+    INTERNAL_ERROR = 'failure_internal'
 
 
 @contextmanager

@@ -20,6 +20,7 @@
 import os
 import json
 import logging as log
+from enum import StrEnum
 
 import zmq
 import zmq.auth
@@ -27,11 +28,14 @@ import zmq.auth
 from spark.utils.misc import to_compact_json
 
 
-class JobStatus:
-    ACCEPTED = 'accepted'
-    REJECTED = 'rejected'
-    SUCCESS = 'success'
-    FAILED = 'failed'
+class JobStatus(StrEnum):
+    """Returned status ob a Job"""
+
+    ACCEPTED = 'accepted'  # worker accepted the job
+    REJECTED = 'rejected'  # worker rejected taking the job
+    SUCCESS = 'success'  # success
+    FAILED = 'failed'  # job failed
+    DEPWAIT = 'depwait'  # waits for a dependency
 
 
 class ReplyException(Exception):

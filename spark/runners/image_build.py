@@ -21,6 +21,7 @@ import os
 import glob
 import shlex
 
+from spark.utils import RunnerResult
 from spark.utils.command import safe_run, run_logged
 from spark.utils.workspace import make_commandfile, debspawn_run_commandfile
 
@@ -29,7 +30,9 @@ def get_version():
     return ('imagebuild', '0.1')
 
 
-def build_image(jlog, host_arch: str, job, jdata):
+def build_image(
+    jlog, host_arch: str, job, jdata
+) -> tuple[RunnerResult, list[os.PathLike | str] | None, os.PathLike | None]:
     '''
     Build an image using the provided recipe (usually utilizing debos)
     '''
@@ -86,22 +89,24 @@ def build_image(jlog, host_arch: str, job, jdata):
                 cache_key=cache_key,
             )
     if ret != 0:
-        return False, None, None
+        return RunnerResult.FAILURE, None, None
 
     # collect list of files to upload
     files = []
     for f in glob.glob('artifacts/*'):
         files.append(os.path.abspath(f))
 
-    return True, files, None
+    return RunnerResult.SUCCESS, files, None
 
 
-def run(jlog, job, jdata):
+def run(
+    jlog, job, jdata
+) -> tuple[RunnerResult, list[os.PathLike | str] | None, os.PathLike | None]:
     suite_name = jdata.get('suite')
     arch = job.get('architecture')
     if not suite_name:
-        return False, None, None
+        return RunnerResult.FAILURE, None, None
     if not arch:
-        return False, None, None
+        return RunnerResult.FAILURE, None, None
 
     return build_image(jlog, arch, job, jdata)
