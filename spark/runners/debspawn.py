@@ -28,9 +28,9 @@ from io import StringIO
 from datetime import timedelta
 
 import firehose.parsers.gcc as fgcc
-from firehose.model import Stats
+from firehose.model import Stats, Analysis
 
-from spark.utils import RunnerResult
+from spark.utils import RunnerError, RunnerResult
 from spark.utils.command import safe_run, run_logged, run_command
 from spark.utils.firehose import create_firehose
 
@@ -69,7 +69,9 @@ def parse_debspawn_log(log, sut):
     return obj
 
 
-def debspawn_build(jlog, dsc, maintainer, suite, affinity, build_arch, build_indep, analysis):
+def debspawn_build(
+    jlog, dsc, maintainer, suite, affinity, build_arch, build_indep, analysis: Analysis
+) -> tuple[Analysis, str, bool, bool, list[str] | None]:
     if not dsc.endswith('.dsc'):
         raise ValueError('WTF')
 
@@ -94,19 +96,19 @@ def debspawn_build(jlog, dsc, maintainer, suite, affinity, build_arch, build_ind
 
     ret, out = run_logged(jlog, ds_cmd, True)
     for line in out.splitlines():
-        if line.startswith('ERROR'):
-            if line.startswith('ERROR: The container image for') or line.startswith(
-                'ERROR: Build environment setup failed.'
-            ):
-                # FIXME: This error is not the build's fault!
-                # we should reflect that somehow.
-                return (analysis, out, True, None)
+        if ret != 0:
+            if line.startswith('ERROR: The container image for'):
+                # We likely have a missing container image for this build type
+                raise RunnerError('This worker is missing an environment: {}'.format(line))
+            elif 'The following packages have unmet dependencies:' in line:
+                # We are waiting for dependencies
+                return (analysis, out, True, True, None)
 
     ftbfs = ret != 0
     base, _ = os.path.basename(dsc).rsplit('.', 1)
     changes = glob.glob('{base}_*.changes'.format(base=base))
 
-    return (analysis, out, ftbfs, changes)
+    return (analysis, out, ftbfs, False, changes)
 
 
 def checkout(dsc_url):
@@ -117,13 +119,13 @@ def checkout(dsc_url):
 def get_version():
     out, _, ret = run_command(['debspawn', '--version'])
     if ret != 0:
-        raise Exception('debspawn is not installed')
+        raise RuntimeError('debspawn is not installed')
     return ('debspawn', out.strip())
 
 
 def run(
     jlog, job, jdata
-) -> tuple[RunnerResult, list[os.PathLike | str] | None, os.PathLike | None]:
+) -> tuple[RunnerResult, list[os.PathLike | str] | None, os.PathLike | str | None]:
     arch_name = job['architecture']
     build_arch = arch_name != 'all'
     build_indep = arch_name == 'all' or jdata['do_indep']
@@ -138,29 +140,35 @@ def run(
         firehose,
         out,
         ftbfs,
-        changes,
+        depwait,
+        changes_list,
     ) = debspawn_build(
         jlog, dsc, maintainer, jdata['suite'], arch_name, build_arch, build_indep, firehose
     )
 
-    if not changes and not ftbfs:
+    if not changes_list and not ftbfs:
         print(out)
-        print(changes)
+        print(changes_list)
         print(list(glob.glob('*')))
-        raise Exception('Um. No changes but no FTBFS.')
+        raise RunnerError('Um. No changes but no FTBFS.')
 
+    changes: str | None = None
     if not ftbfs:
-        changes = os.path.join(os.getcwd(), changes[0])
-    else:
-        changes = None
+        changes = os.path.join(os.getcwd(), changes_list[0])
 
     _, _, v = jdata['package_version'].rpartition(':')
     prefix = '%s_%s_%s.%s' % (jdata['package_name'], v, arch_name, job['uuid'])
     firehose_fname = '{prefix}.firehose.xml'.format(prefix=prefix)
 
-    files = list()
+    files: list[os.PathLike | str] = []
     with open(firehose_fname, 'wb') as fd:
         fd.write(firehose.to_xml_bytes())
     files.append(os.path.abspath(firehose_fname))
 
-    return RunnerResult.FAILURE if ftbfs else RunnerResult.SUCCESS, files, changes
+    result = RunnerResult.SUCCESS
+    if depwait:
+        result = RunnerResult.DEPWAIT
+    elif ftbfs:
+        result = RunnerResult.FAILURE
+
+    return result, files, changes
