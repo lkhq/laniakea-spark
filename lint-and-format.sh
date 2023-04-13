@@ -4,6 +4,12 @@ set -e
 BASEDIR=$(dirname "$0")
 cd $BASEDIR
 
+echo "=== ISort ==="
+isort .
+
+echo "=== Black ==="
+black .
+
 echo "=== Flake8 ==="
 python -m flake8 ./ --statistics
 echo "✓"
@@ -14,9 +20,3 @@ echo "✓"
 
 echo "=== MyPy ==="
 python -m mypy .
-
-echo "=== ISort ==="
-isort .
-
-echo "=== Black ==="
-black .
