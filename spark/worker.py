@@ -24,20 +24,22 @@ import logging as log
 from email.utils import formatdate
 
 from spark.utils import RunnerResult
+from spark.config import LocalConfig
 from spark.joblog import job_log
 from spark.runners import PLUGINS, load_module
 from spark.connection import JobStatus, ServerErrorException
 
 
 class Worker:
-    '''
-    One task runner, executing the actual job by doing some housekeeping and
+    """
+    A task supervisor, executing the actual job by doing some housekeeping and
     calling the appropriate runner.
-    '''
+    """
 
-    def __init__(self, conf, lighthouse_connection):
+    def __init__(self, conf: LocalConfig, lighthouse_connection, is_primary: bool = True):
         self._conn = lighthouse_connection
         self._conf = conf
+        self._is_primary = is_primary
 
     def _run_job(self, job):
         '''
@@ -83,6 +85,12 @@ class Worker:
         log_fname = os.path.join(self._conf.job_log_dir, '{}.log'.format(job_id))
 
         runner_name = job['kind']
+        job_repo = job.get('repo')
+        if not job_repo:
+            self._conn.send_job_status(job_id, JobStatus.REJECTED)
+            log.info('Forwarded job \'{}\' - no repository set to upload generated artifacts to.')
+            return False
+
         if not PLUGINS.get(runner_name):
             self._conn.send_job_status(job_id, JobStatus.REJECTED)
             log.info('Forwarded job \'{}\' - no runner for kind "{}"'.format(job_id, job['kind']))
@@ -139,8 +147,8 @@ class Worker:
                 # send the result to the remote server
                 try:
                     if changes:
-                        upload(changes, self._conf.gpg_key_id, self._conf.dput_host)
-                    upload(dudf, self._conf.gpg_key_id, self._conf.dput_host)
+                        upload(changes, self._conf.gpg_key_id, job_repo, self._conf._dput_cf_fname)
+                    upload(dudf, self._conf.gpg_key_id, job_repo, self._conf._dput_cf_fname)
                 except Exception as e:
                     import sys
 
@@ -156,9 +164,9 @@ class Worker:
         return True
 
     def _request_job(self):
-        '''
+        """
         Request a new job.
-        '''
+        """
 
         job_reply = None
         try:
@@ -189,7 +197,58 @@ class Worker:
             self._conn.send_job_status(job_id, JobStatus.REJECTED)
             return False
 
+    def _update_archive_data(self):
+        """
+        Update our Dput configuration and other data, after learning about the master
+        server's archive configuration.
+        """
+        import configparser
+
+        reply_data = None
+        try:
+            reply_data = self._conn.request_archive_setup()
+        except ServerErrorException as e:
+            log.warning(str(e))
+            return False
+        except Exception as e:
+            log.error('Error when requesting job: {}'.format(str(e)))
+            return False
+
+        dput_fname = self._conf._dput_cf_fname
+
+        dputcf = configparser.ConfigParser()
+        if os.path.isfile(dput_fname):
+            dputcf.read(dput_fname)
+
+        repos = reply_data.get('archive_repos')
+        if not repos:
+            log.warning('Received no repository data from server!')
+
+        for repo_name, data in repos.items():
+            method = data['upload_method']
+            fqdn = data['upload_fqdn']
+            if not method or not fqdn:
+                log.warning('Unable to upload to %s: No upload destination known.', repo_name)
+                continue
+
+            dputcf[repo_name]['login'] = 'anonymous'
+            dputcf[repo_name]['allow_unsigned_uploads'] = '0'
+            dputcf[repo_name]['fqdn'] = fqdn
+            dputcf[repo_name]['method'] = method
+            dputcf[repo_name]['incoming'] = repo_name
+
+        with open(dput_fname, 'w', encoding='utf-8') as f:
+            dputcf.write(f)
+
     def run(self):
+        """Worker main loop"""
+
+        # the primary worker is responsible for updating the dput.cf
+        # file and store knowledge about the archive
+        if self._is_primary:
+            self._update_archive_data()
+
+        # process jobs
         while True:
             if not self._request_job():
                 time.sleep(30)  # wait 30s before trying again

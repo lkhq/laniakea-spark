@@ -88,6 +88,7 @@ class LocalConfig:
             workspace_root = '/var/lib/lkspark/'
         self._workspace_dir = os.path.join(workspace_root, 'workspaces')
         self._job_log_dir = os.path.join(workspace_root, 'logs')
+        self._dput_cf_fname = os.path.join(workspace_root, 'dput.cf')
 
         self._architectures = cdata.get("Architectures")
         if not self._architectures:
@@ -113,9 +114,6 @@ class LocalConfig:
                 'without accepting any job type, running this daemon is pointless.'
             )
 
-        self._dput_host = cdata.get('DputHost')
-        if not self._dput_host:
-            raise ConfigError('The essential "DputHost" configuration entry is missing.')
         self._gpg_key_id = cdata.get('GpgKeyID')
         if not self._gpg_key_id:
             raise ConfigError('The essential "GpgKeyID" configuration entry is missing.')
@@ -163,16 +161,17 @@ class LocalConfig:
         return self._workspace_dir
 
     @property
+    def dput_cf_fname(self) -> str:
+        """Path to our dput.cf filename."""
+        return self._dput_cf_fname
+
+    @property
     def job_log_dir(self) -> str:
         return self._job_log_dir
 
     @property
     def supported_architectures(self) -> List[str]:
         return self._architectures
-
-    @property
-    def dput_host(self) -> str:
-        return self._dput_host
 
     @property
     def gpg_key_id(self) -> str:

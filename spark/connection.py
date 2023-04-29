@@ -149,12 +149,12 @@ class ServerConnection:
         # wait for a reply
         job_reply_msgs = None
         try:
-            sockev = dict(self._poller.poll(RESPONSE_WAIT_TIME))
+            sev = dict(self._poller.poll(RESPONSE_WAIT_TIME))
         except zmq.error.ZMQError as e:
             self._send_attempt_failed()
             raise ReplyException('ZMQ error while polling for reply: ' + str(e)) from e
 
-        if sockev.get(self._sock) == zmq.POLLIN:
+        if sev.get(self._sock) == zmq.POLLIN:
             job_reply_msgs = self._sock.recv_multipart()
         else:
             self._send_attempt_failed()
@@ -189,6 +189,63 @@ class ServerConnection:
 
         return job_reply
 
+    def request_archive_info(self):
+        """
+        Request archive setup information, to know which repositories exist and where to upload to.
+        """
+
+        # construct information request
+        req = dict(self._base_req)
+        req['request'] = 'archive-info'
+
+        # request data
+        self._sock.send_string(to_compact_json(req))
+
+        # wait for a reply
+        reply_msgs = None
+        try:
+            sev = dict(self._poller.poll(RESPONSE_WAIT_TIME))
+        except zmq.error.ZMQError as e:
+            self._send_attempt_failed()
+            raise ReplyException('ZMQ error while polling for setup data reply: ' + str(e)) from e
+
+        if sev.get(self._sock) == zmq.POLLIN:
+            reply_msgs = self._sock.recv_multipart()
+        else:
+            self._send_attempt_failed()
+            raise ReplyException(
+                'Request for archive data expired (the master server might be unreachable).'
+            )
+
+        if not reply_msgs:
+            raise ReplyException('Invalid server response on a job request.')
+        reply_raw = reply_msgs[0]
+
+        reply_data = None
+        try:
+            reply_data = json.loads(str(reply_raw, 'utf-8'))
+        except Exception as e:
+            raise MessageException(
+                'Unable to decode server reply ({0}): {1}'.format(reply_raw, str(e))
+            ) from e
+        if not reply_data:
+            log.debug('No archive data configured.')
+            return None
+
+        try:
+            server_error = reply_data.get('error')
+        except Exception as e:
+            raise ServerErrorException(
+                'Received unexpected server reply: {}'.format(str(reply_data))
+            ) from e
+
+        if server_error:
+            raise ServerErrorException(
+                'Received error message from server: {}'.format(server_error)
+            )
+
+        return reply_data
+
     def _send_attempt_failed(self, error=None):
         self._send_attempts = self._send_attempts + 1
         if self._send_attempts >= 6:
@@ -207,11 +264,11 @@ class ServerConnection:
 
         self._sock.send(data, copy=False, track=True)
         try:
-            sockev = dict(self._poller.poll(RESPONSE_WAIT_TIME))
+            sev = dict(self._poller.poll(RESPONSE_WAIT_TIME))
         except zmq.error.ZMQError as e:
             self._send_attempt_failed(e)
 
-        if sockev.get(self._sock) == zmq.POLLIN:
+        if sev.get(self._sock) == zmq.POLLIN:
             self._sock.recv_multipart()  # discard reply
         else:
             self._send_attempt_failed()

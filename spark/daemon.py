@@ -35,7 +35,7 @@ class Daemon:
             log_level = log.INFO
         log.basicConfig(level=log_level, format="[%(levelname)s] %(message)s")
 
-    def run_worker_process(self, worker_name):
+    def run_worker_process(self, worker_name: str, is_primary: bool):
         """
         Set up connection for a new worker process and launch it.
         This function is executed in a new process.
@@ -54,7 +54,7 @@ class Daemon:
             )
         )
 
-        w = Worker(self._conf, conn)
+        w = Worker(self._conf, conn, is_primary=is_primary)
         w.run()
 
     def run(self):
@@ -77,10 +77,12 @@ class Daemon:
         # initialize workers
         if self._conf.max_jobs == 1:
             # don't use multiprocess when our maximum amount of jobs is just 1
-            self.run_worker_process('worker_0')
+            self.run_worker_process('worker_0', is_primary=True)
         else:
+            is_primary = True
             for i in range(0, self._conf.max_jobs):
                 worker_name = 'worker_{}'.format(i)
-                p = Process(target=self.run_worker_process, args=(worker_name,))
+                p = Process(target=self.run_worker_process, args=(worker_name, is_primary))
                 p.name = worker_name
                 p.start()
+                is_primary = False

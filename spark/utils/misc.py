@@ -34,9 +34,9 @@ def sign(changes, gpg):
         safe_run(['debsign', '-k', gpg, changes])
 
 
-def upload(changes, gpg, host):
+def upload(changes, gpg, host, config_file):
     sign(changes, gpg)
-    return safe_run(['dput', host, changes])
+    return safe_run(['dput', '-c', config_file, host, changes])
 
 
 @contextmanager
