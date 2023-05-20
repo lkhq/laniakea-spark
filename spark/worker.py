@@ -197,7 +197,7 @@ class Worker:
             self._conn.send_job_status(job_id, JobStatus.REJECTED)
             return False
 
-    def _update_archive_data(self):
+    def _update_archive_data(self) -> bool:
         """
         Update our Dput configuration and other data, after learning about the master
         server's archive configuration.
@@ -206,7 +206,7 @@ class Worker:
 
         reply_data = None
         try:
-            reply_data = self._conn.request_archive_setup()
+            reply_data = self._conn.request_archive_info()
         except ServerErrorException as e:
             log.warning(str(e))
             return False
@@ -240,13 +240,16 @@ class Worker:
         with open(dput_fname, 'w', encoding='utf-8') as f:
             dputcf.write(f)
 
+        return True
+
     def run(self):
         """Worker main loop"""
 
         # the primary worker is responsible for updating the dput.cf
         # file and store knowledge about the archive
         if self._is_primary:
-            self._update_archive_data()
+            while not self._update_archive_data():
+                time.sleep(30)
 
         # process jobs
         while True:
