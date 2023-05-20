@@ -81,19 +81,19 @@ class Worker:
             return False
 
         # set the logfile and run the job
-        log.info('Running job \'{}\''.format(job_id))
+        log.info('Running job \'%s\'', job_id)
         log_fname = os.path.join(self._conf.job_log_dir, '{}.log'.format(job_id))
 
         runner_name = job['kind']
         job_repo = job.get('repo')
         if not job_repo:
             self._conn.send_job_status(job_id, JobStatus.REJECTED)
-            log.info('Forwarded job \'{}\' - no repository set to upload generated artifacts to.')
+            log.info('Forwarded job \'%s\' - no repository set to upload generated artifacts to.', job_id)
             return False
 
         if not PLUGINS.get(runner_name):
             self._conn.send_job_status(job_id, JobStatus.REJECTED)
-            log.info('Forwarded job \'{}\' - no runner for kind "{}"'.format(job_id, job['kind']))
+            log.info('Forwarded job \'%s\' - no runner for kind "%s"', job_id, job['kind'])
             return False
 
         self._conn.send_job_status(job_id, JobStatus.ACCEPTED)
