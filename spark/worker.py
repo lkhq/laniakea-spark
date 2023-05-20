@@ -214,7 +214,7 @@ class Worker:
             log.error('Error when requesting job: {}'.format(str(e)))
             return False
 
-        dput_fname = self._conf._dput_cf_fname
+        dput_fname = self._conf.dput_cf_fname
 
         dputcf = configparser.ConfigParser()
         if os.path.isfile(dput_fname):
@@ -224,6 +224,7 @@ class Worker:
         if not repos:
             log.warning('Received no repository data from server!')
 
+        have_data = False
         for repo_name, data in repos.items():
             method = data['upload_method']
             fqdn = data['upload_fqdn']
@@ -231,16 +232,23 @@ class Worker:
                 log.warning('Unable to upload to %s: No upload destination known.', repo_name)
                 continue
 
-            dputcf[repo_name]['login'] = 'anonymous'
-            dputcf[repo_name]['allow_unsigned_uploads'] = '0'
-            dputcf[repo_name]['fqdn'] = fqdn
-            dputcf[repo_name]['method'] = method
-            dputcf[repo_name]['incoming'] = repo_name
+            d = dict(
+                login='anonymous',
+                allow_unsigned_uploads='0',
+                fqdn=fqdn,
+                method=method,
+                incoming=repo_name,
+            )
+            dputcf[repo_name] = d
+            have_data = True
 
-        with open(dput_fname, 'w', encoding='utf-8') as f:
-            dputcf.write(f)
+        if have_data:
+            with open(dput_fname, 'w', encoding='utf-8') as f:
+                dputcf.write(f)
 
-        return True
+            return True
+        else:
+            return False
 
     def run(self):
         """Worker main loop"""
