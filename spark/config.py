@@ -53,6 +53,7 @@ class LocalConfig:
                 )
                 sys.exit(6)
 
+        self._machine_owner = cdata.get('MachineOwner')
         self._machine_name = cdata.get('MachineName')
         if not self._machine_name:
             self._machine_name = (
@@ -135,6 +136,10 @@ class LocalConfig:
     @property
     def machine_name(self) -> str:
         return self._machine_name
+
+    @property
+    def machine_owner(self) -> str:
+        return self._machine_owner
 
     @property
     def accepted_job_kinds(self) -> List[str]:

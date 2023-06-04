@@ -140,6 +140,7 @@ class ServerConnection:
         # construct job request
         req = dict(self._base_req)
         req['request'] = 'job'
+        req['owner'] = self._conf.machine_owner
         req['accepts'] = self._conf.accepted_job_kinds
         req['architectures'] = self._conf.supported_architectures
 

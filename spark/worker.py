@@ -88,7 +88,9 @@ class Worker:
         job_repo = job.get('repo')
         if not job_repo:
             self._conn.send_job_status(job_id, JobStatus.REJECTED)
-            log.info('Forwarded job \'%s\' - no repository set to upload generated artifacts to.', job_id)
+            log.info(
+                'Forwarded job \'%s\' - no repository set to upload generated artifacts to.', job_id
+            )
             return False
 
         if not PLUGINS.get(runner_name):
