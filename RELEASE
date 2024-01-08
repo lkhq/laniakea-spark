@@ -1,0 +1,19 @@
+Laniakea-Spark Release Notes
+
+1. Tag release in Git:
+
+git tag -s -f -m "Release 0.1.0" v0.1.0 <gpg password>
+git push --tags
+git push
+
+2. Upload to PyPI:
+
+python setup.py sdist
+twine upload dist/*
+
+3. Do post release version bump in `RELEASE` and `spark/__init__.py`
+
+4. Commit trivial changes:
+
+git commit -a -m "trivial: post release version bump"
+git push
