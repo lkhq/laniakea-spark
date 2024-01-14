@@ -2,7 +2,7 @@ Laniakea-Spark Release Notes
 
 1. Tag release in Git:
 
-git tag -s -f -m "Release 0.1.0" v0.1.0 <gpg password>
+git tag -s -f -m "Release 0.2.0" v0.2.0 <gpg password>
 git push --tags
 git push
 
