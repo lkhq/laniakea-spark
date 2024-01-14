@@ -13,7 +13,8 @@ with the right credentials for the respective instance.
 
 Minimum required Debian release: 11.0 (Bullseye)
 
-### Install dependencies
+### Dependencies
+
 ```Bash
 sudo apt install \
 	python3-debian \
@@ -25,50 +26,6 @@ sudo apt install \
 	debspawn
 ```
 
-### Add lkspark user and group
-```Bash
-adduser --system --home=/var/lib/lkspark lkspark
-addgroup lkspark
-chown lkspark:lkspark /var/lib/lkspark
-```
-
-### Write spark.toml
-
-Create `/etc/laniakea/spark.toml` with the respective information for your deployment:
-```toml
-LighthouseServer = 'tcp://master.example.org:5570'
-AcceptedJobs = [
-    'package-build',
-    'os-image-build'
-]
-MachineOwner = 'ACME Inc.'
-GpgKeyID = 'DEADBEEF<gpg_fingerprint>'
-```
-
-### Create RSA sign-only GnuPG key as lkspark user
-
-TODO
-
-### Make Debspawn images
-
-TODO
-
-### Restart spark
-
-TODO
-
-### Add GPG key to master
-
-TODO
-
-### Add server key to Spark
-
-TODO
-
-### Generate client certificate
-
-TODO
-
-### Add client certificate to master
-
-TODO
+You can find more information on how to set up Spark instances at
+[the Laniakea documentation](https://laniakea-hq.readthedocs.io/latest/general/worker-setup.html)
+or check out our [Ansible provisioning templates](https://github.com/lkhq/spark-setup).
