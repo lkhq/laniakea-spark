@@ -6,9 +6,9 @@ ConditionPathExists=/etc/laniakea/spark.toml
 [Service]
 Type=simple
 Restart=on-failure
-User=lkspark
-Group=lkspark
-ExecStart=/usr/local/bin/lk-spark
+User=_lkspark
+Group=nobody
+ExecStart=@PREFIX@/bin/lk-spark
 
 [Install]
 WantedBy=multi-user.target

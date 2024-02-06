@@ -2,8 +2,8 @@
 [![Build & Test](https://github.com/lkhq/laniakea-spark/actions/workflows/python.yml/badge.svg)](https://github.com/lkhq/laniakea-spark/actions/workflows/python.yml)
 
 Spark is the generic Laniakea job runner and package build executor.
-It is able to perform a variety of tasks on Laniakea on build-farms, like building
-packages or distribution ISO images.
+It is able to perform a variety of tasks on dedicated builder machines,
+like building packages, distribution ISO images or performing longer QA tasks.
 
 Spark instances communicate with Lighthouse servers via ZeroMQ to fetch new jobs and
 report information. They auto-register with the master system, if they were provided
@@ -25,6 +25,8 @@ sudo apt install \
 	dput-ng \
 	debspawn
 ```
+
+### Installation
 
 You can find more information on how to set up Spark instances at
 [the Laniakea documentation](https://laniakea-hq.readthedocs.io/latest/general/worker-setup.html)
