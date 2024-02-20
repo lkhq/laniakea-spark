@@ -16,4 +16,4 @@
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
 __appname__ = 'laniakea-spark'
-__version__ = '0.1.1'
+__version__ = '0.1.2'
