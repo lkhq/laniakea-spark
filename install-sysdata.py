@@ -87,6 +87,7 @@ def install_data(temp_dir: str, root_dir: str, prefix_dir: str):
     sd_system_unit_dir = pkgconfig.variables('systemd')['systemdsystemunitdir']
 
     inst.install('data/systemd/laniakea-spark.service.in', sd_system_unit_dir, replace_vars=True)
+    inst.install('data/sudo/10laniakea-spark', '/etc/sudoers.d/', replace_vars=True)
 
 
 def main():
