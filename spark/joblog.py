@@ -59,7 +59,7 @@ class JobLog:
         if self._have_output:
             self._send_buffer()
         if not self._closed:
-            threading.Timer(30.0, self._send_timed).start()
+            threading.Timer(15.0, self._send_timed).start()
 
     def _send_buffer(self):
         if not self._have_output:
