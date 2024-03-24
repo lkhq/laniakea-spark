@@ -122,7 +122,10 @@ class ServerConnection:
             self._send_attempt_failed()
             log.error('ZMQ error while waiting for reply: %s', str(e))
         if sockev.get(self._sock) == zmq.POLLIN:
-            self._sock.recv_multipart()  # discard reply
+            try:
+                self._sock.recv_multipart()  # discard reply
+            except zmq.error.ZMQError as e:
+                log.error('ZMQ error, unable to receive reply: %s', str(e))
         else:
             log.error('Unable to send job status: No reply from master')
 
