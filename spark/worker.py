@@ -109,7 +109,7 @@ class Worker:
                     import traceback
 
                     tb = traceback.format_exc()
-                    log.write(tb)
+                    jlog.write(tb)
                     self._conn.send_job_status(job_id, JobStatus.REJECTED)
                     log.warning(tb)
                     log.info('Rejected job {}'.format(job_id))
@@ -206,7 +206,7 @@ class Worker:
             import traceback
 
             tb = traceback.format_exc()
-            jlog.write(tb)
+            log.info(tb)
             self._conn.send_job_status(job_id, JobStatus.REJECTED)
             log.warning(tb)
             log.info('Rejected job {} due to exception'.format(job_id))
