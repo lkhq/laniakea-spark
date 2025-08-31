@@ -6,16 +6,39 @@ authors = [
 ]
 license = {text="LGPL-3.0-or-later"}
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 dynamic = ['version']
+dependencies = [
+    "tomlkit>=0.8",
+    "pyzmq>=16",
+    "python-debian>=0.1.28",
+    "firehose>=0.5"
+]
+keywords = ["laniakea", "job-runner", "distributed"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
 
 [project.urls]
-Documentation = "https://github.com/lkhq/laniakea-spark"
+Documentation = "https://laniakea-hq.rtfd.io"
 Source = "https://github.com/lkhq/laniakea-spark"
+Homepage = "https://laniakea-hq.rtfd.io"
+
+[project.scripts]
+lk-spark = "spark.cli:daemon"
 
 [build-system]
-requires = ["setuptools", "wheel", "pkgconfig"]
-build-backend = "setuptools.build_meta"
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+[tool.flit.module]
+name = "spark"
 
 [tool.pylint.master]
 

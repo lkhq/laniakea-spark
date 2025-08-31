@@ -15,6 +15,32 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this software.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
+import sys
+
+
+def check_system_configuration():
+    """Check if required system configuration files are installed."""
+    missing_files = []
+
+    # Check for systemd service file
+    systemd_service = '/lib/systemd/system/laniakea-spark.service'
+    if not os.path.exists(systemd_service):
+        missing_files.append(systemd_service)
+
+    # Check for sudo configuration
+    sudo_config = '/etc/sudoers.d/10laniakea-spark'
+    if not os.path.exists(sudo_config):
+        missing_files.append(sudo_config)
+
+    if missing_files:
+        print("⚠️  WARNING: Missing system configuration files:", file=sys.stderr)
+        for file in missing_files:
+            print(f"   - {file}", file=sys.stderr)
+        print("", file=sys.stderr)
+        print("The daemon may not be set up properly.", file=sys.stderr)
+        print("", file=sys.stderr)
+
 
 def daemon():
     from argparse import ArgumentParser
@@ -37,6 +63,9 @@ def daemon():
     parser.add_argument(
         "-d", "--debug", action="store_true", dest="debug", help="Enable debug messages to stderr."
     )
+
+    # Check system configuration before starting
+    check_system_configuration()
 
     from spark.daemon import Daemon
 

@@ -91,7 +91,7 @@ def install_data(temp_dir: str, root_dir: str, prefix_dir: str):
 
 
 def main():
-    parser = ArgumentParser(description='Debspawn system data installer')
+    parser = ArgumentParser(description='LkSpark system data installer')
 
     parser.add_argument(
         '--root', action='store', dest='root', default=None, help='Root directory to install into.'
