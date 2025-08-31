@@ -265,6 +265,8 @@ class ServerConnection:
             data = s.encode('utf-8')
         elif type(s) is not bytes:
             data = str(s).encode('utf-8')
+        else:
+            raise TypeError('send_str_noreply() requires str or bytes argument.')
 
         self._sock.send(data, copy=False, track=True)
         try:
