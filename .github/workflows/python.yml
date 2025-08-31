@@ -36,13 +36,14 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-        pip install flake8 pytest pylint mypy black isort
+        pip install flit flake8 pytest pylint mypy black isort
 
     - name: Build & Install
       run: |
-        ./setup.py build
-        ./setup.py install --root=/tmp
-        rm -rf build/
+        flit build
+        pip install --prefix=/usr/local --root=/tmp/install-root/ dist/*.whl
+        python3 install-sysdata.py --root=/tmp/install-root/
+        rm -rf build/ dist/
 
     - name: Lint (flake8)
       run: |
